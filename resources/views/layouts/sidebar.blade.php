@@ -214,6 +214,20 @@
             </div>
         </nav>
 
+        @auth
+            <form method="post" action="{{ route('logout') }}" class="mx-1 mb-4">
+                @csrf
+                <button type="submit" class="menu-item group w-full text-red-700 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-500/10"
+                    :class="(!$store.sidebar.isExpanded && !$store.sidebar.isHovered && !$store.sidebar.isMobileOpen) ? 'xl:justify-center' : 'xl:justify-start'"
+                    aria-label="Se déconnecter" title="Se déconnecter">
+                    <span class="menu-item-icon-inactive text-red-700 dark:text-red-300" aria-hidden="true">
+                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 17l5-5-5-5m5 5H3"/><path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6"/></svg>
+                    </span>
+                    <span x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen" class="menu-item-text">Se déconnecter</span>
+                </button>
+            </form>
+        @endauth
+
         <!-- Sidebar Widget -->
         <div class="hidden [.sidebar-expanded_&]:block mt-auto">
             @include('layouts.sidebar-widget')

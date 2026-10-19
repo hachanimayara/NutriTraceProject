@@ -102,8 +102,8 @@
     >
         <!-- User Info -->
         <div>
-            <span class="block font-medium text-gray-700 text-theme-sm dark:text-gray-400">Musharof Chowdhury</span>
-            <span class="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400">randomuser@pimjo.com</span>
+            <span class="block font-medium text-gray-700 text-theme-sm dark:text-gray-400">{{ auth()->user()->name }}</span>
+            <span class="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400">{{ auth()->user()->email }}</span>
         </div>
 
         <!-- Menu Items -->
@@ -220,6 +220,8 @@
                 </div>
             </li>
         </ul>
+        <a href="{{ route('notifications.index') }}" class="px-3 py-2 text-sm text-gray-700">Notifications</a>
+        <form method="post" action="{{ route('logout') }}">@csrf<button class="w-full rounded-lg px-3 py-2 text-left text-sm text-red-700 hover:bg-gray-100">Se déconnecter</button></form>
 
         <!-- Sign Out -->
         <a

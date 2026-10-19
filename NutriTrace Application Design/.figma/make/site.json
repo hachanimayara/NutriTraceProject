@@ -1,0 +1,10 @@
+{
+  "description": "Facilite la traçabilité alimentaire complète pour producteurs, transformateurs, distributeurs, consommateurs et administrateurs avec analyses IA intégrées.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

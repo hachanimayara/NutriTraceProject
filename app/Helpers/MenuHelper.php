@@ -6,12 +6,19 @@ class MenuHelper
 {
     public static function getMenuGroups(): array
     {
+        $items = [
+            ['icon' => 'dashboard', 'name' => 'Tableau de bord', 'path' => auth()->check() ? auth()->user()->getDashboardUrl() : '/login'],
+            ['icon' => 'website', 'name' => 'Site public', 'path' => '/'],
+        ];
+        if (auth()->check() && auth()->user()->isAdmin()) {
+            $items[] = ['icon' => 'website', 'name' => 'Utilisateurs', 'path' => '/admin/users'];
+        }
+        $items[] = ['icon' => 'website', 'name' => 'Notifications', 'path' => '/notifications'];
+        $items[] = ['icon' => 'website', 'name' => 'Mon profil', 'path' => '/profile'];
+
         return [[
             'title' => 'Navigation',
-            'items' => [
-                ['icon' => 'dashboard', 'name' => 'Tableau de bord', 'path' => '/admin'],
-                ['icon' => 'website', 'name' => 'Site public', 'path' => '/'],
-            ],
+            'items' => $items,
         ]];
     }
 

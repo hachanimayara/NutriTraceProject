@@ -29,7 +29,7 @@
                 <div class="navbar-nav ms-auto p-4 p-lg-0">
                     <a href="{{ route('front.home') }}" class="nav-item nav-link {{ request()->routeIs('front.home') ? 'active' : '' }}">Accueil</a>
                     <a href="{{ route('front.about') }}" class="nav-item nav-link {{ request()->routeIs('front.about') ? 'active' : '' }}">À propos</a>
-                    <a href="{{ route('admin.dashboard') }}" class="nav-item nav-link">Administration</a>
+                    <a href="{{ route('login') }}" class="nav-item nav-link {{ request()->routeIs('login') ? 'active' : '' }}">Connexion</a>
                 </div>
                 <div class="d-none d-lg-flex ms-2"><a class="btn btn-primary rounded-pill py-2 px-4" href="{{ route('front.about') }}">Découvrir NutriTrace</a></div>
             </div>
