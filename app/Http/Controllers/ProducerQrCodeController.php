@@ -39,13 +39,21 @@ class ProducerQrCodeController extends Controller
     {
         $parts = parse_url($baseUrl);
         $host = strtolower($parts['host'] ?? '');
-        if ($host === '' || ! in_array($parts['scheme'] ?? '', ['http', 'https'], true)) return false;
+        if ($host === '' || ! in_array($parts['scheme'] ?? '', ['http', 'https'], true)) {
+            return false;
+        }
 
         // QR codes are handed to consumers, so never encode a development URL,
         // even when the application itself is running outside production.
-        if (in_array($host, ['localhost', 'localhost.localdomain'], true) || preg_match('/\.(test|local|localhost|example|invalid|internal)$/', $host)) return false;
-        if (filter_var($host, FILTER_VALIDATE_IP) && ! filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) return false;
-        if (app()->environment('production') && ($parts['scheme'] ?? '') !== 'https') return false;
+        if (in_array($host, ['localhost', 'localhost.localdomain'], true) || preg_match('/\.(test|local|localhost|example|invalid|internal)$/', $host)) {
+            return false;
+        }
+        if (filter_var($host, FILTER_VALIDATE_IP) && ! filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+            return false;
+        }
+        if (app()->environment('production') && ($parts['scheme'] ?? '') !== 'https') {
+            return false;
+        }
 
         return true;
     }

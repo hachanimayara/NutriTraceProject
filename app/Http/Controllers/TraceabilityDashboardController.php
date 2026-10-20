@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Certification;
+use App\Helpers\MenuHelper;
 use App\Models\AdminAuditLog;
+use App\Models\Certification;
 use App\Models\Distribution;
 use App\Models\EnvironmentalIndicator;
 use App\Models\Farm;
@@ -33,7 +34,7 @@ class TraceabilityDashboardController extends Controller
         $categories = $role === 'producteur'
             ? Product::where('user_id', $user->id)->select('category', DB::raw('COUNT(*) as total'))->groupBy('category')->orderByDesc('total')->limit(6)->get()
             : collect();
-        $quickLinks = collect(\App\Helpers\MenuHelper::getMenuGroups()[0]['items'])
+        $quickLinks = collect(MenuHelper::getMenuGroups()[0]['items'])
             ->reject(fn ($item) => in_array($item['path'], ['/', '/notifications', '/profile', $user->getDashboardUrl()], true))
             ->values();
         $primary = match ($role) {
@@ -89,6 +90,7 @@ class TraceabilityDashboardController extends Controller
         if ($role === 'producteur') {
             $products = Product::where('user_id', $user->id);
             $certificates = $this->ownedCertifications($user);
+
             return [
                 $this->stat('Exploitations', Farm::where('user_id', $user->id)->count(), '/workspace/farms', 'Vos sites de production', 'mint'),
                 $this->stat('Produits', (clone $products)->count(), '/workspace/products', 'Votre catalogue', 'blue'),
@@ -103,6 +105,7 @@ class TraceabilityDashboardController extends Controller
         if ($role === 'transformateur') {
             $transformations = Transformation::where('user_id', $user->id);
             $lots = Lot::whereHas('transformations', fn ($q) => $q->where('user_id', $user->id));
+
             return [
                 $this->stat('Transformations', (clone $transformations)->count(), '/workspace/transformations', 'Op&eacute;rations enregistr&eacute;es', 'mint'),
                 $this->stat('Lots g&eacute;r&eacute;s', (clone $lots)->count(), '/workspace/lots', 'Reli&eacute;s &agrave; vos transformations', 'blue'),
@@ -115,6 +118,7 @@ class TraceabilityDashboardController extends Controller
         }
 
         $distributions = Distribution::where('user_id', $user->id);
+
         return [
             $this->stat('Distributions', (clone $distributions)->count(), '/workspace/distributions', 'Vos mouvements', 'mint'),
             $this->stat('Livraisons planifi&eacute;es', (clone $distributions)->where('status', 'planned')->count(), '/workspace/distributions?status=planned', '&Agrave; exp&eacute;dier', 'blue'),
@@ -197,6 +201,7 @@ class TraceabilityDashboardController extends Controller
         if ($role === 'transformateur') {
             $transformations = Transformation::where('user_id', $user->id)->with('lots.product')->latest()->limit(5)->get()->map(fn (Transformation $item) => $this->row($item->name, $item->reference.' &middot; '.$item->lots->count().' lot(s) li&eacute;(s)', $this->statusLabel($item->status).' &middot; '.$item->created_at?->format('d/m/Y'), '/workspace/transformations'))->all();
             $lots = Lot::whereHas('transformations', fn ($q) => $q->where('user_id', $user->id))->with(['product', 'transformations' => fn ($q) => $q->where('user_id', $user->id)])->latest()->limit(5)->get()->map(fn (Lot $lot) => $this->row($lot->code, $lot->product?->name ?: 'Produit associ&eacute;', $this->statusLabel($lot->status).' &middot; '.$lot->quantity.' '.$lot->unit, '/workspace/lots'))->all();
+
             return [
                 $this->section('Transformations r&eacute;centes', '/workspace/transformations', $transformations),
                 $this->section('Lots g&eacute;r&eacute;s', '/workspace/lots', $lots),
@@ -207,6 +212,7 @@ class TraceabilityDashboardController extends Controller
             $distributions = Distribution::where('user_id', $user->id)->with(['lot.product', 'store'])->latest()->limit(5)->get()->map(fn (Distribution $item) => $this->row($item->reference, ($item->lot?->product?->name ?: 'Produit associ&eacute;').' &middot; '.($item->lot?->code ?: 'Lot indisponible'), ($item->store?->name ?: 'Point de vente').' &middot; '.$this->statusLabel($item->status), '/workspace/distributions'))->all();
             $stores = Store::where('user_id', $user->id)->latest()->limit(4)->get()->map(fn (Store $store) => $this->row($store->name, trim($store->city.', '.$store->country, ', '), 'R&eacute;f. '.$store->reference, '/workspace/stores'))->all();
             $linkedProducts = Product::whereIn('id', Distribution::where('user_id', $user->id)->join('lots', 'lots.id', '=', 'distributions.lot_id')->select('lots.product_id'))->with('farm')->distinct()->latest()->limit(5)->get()->map(fn (Product $product) => $this->row($product->name, $product->reference.' &middot; '.($product->farm?->name ?: 'Producteur'), $product->origin ?: ($product->farm?->location ?: 'Origine non renseign&eacute;e'), '/workspace/distributions'))->all();
+
             return [
                 $this->section('Distributions r&eacute;centes', '/workspace/distributions', $distributions),
                 $this->section('Points de vente g&eacute;r&eacute;s', '/workspace/stores', $stores),
@@ -228,6 +234,7 @@ class TraceabilityDashboardController extends Controller
             $actions = ['user.approved' => 'Compte approuv&eacute;', 'user.activated' => 'Compte r&eacute;activ&eacute;', 'user.suspended' => 'Compte suspendu', 'user.deleted' => 'Compte supprim&eacute;'];
             $activities->push($this->row($actions[$log->action] ?? 'Action administrative', $admin?->name ?: 'Administrateur', 'Administration &middot; '.$log->created_at?->format('d/m/Y H:i'), '/admin/users', $log->created_at));
         });
+
         return [$this->section('Derni&egrave;res activit&eacute;s', '/admin/alerts', $activities->sortByDesc('date')->take(7)->values()->all())];
     }
 
@@ -247,6 +254,7 @@ class TraceabilityDashboardController extends Controller
         $this->ownedIndicators($user)->with(['product', 'lot.product'])->latest()->limit(3)->get()->each(function (EnvironmentalIndicator $item) use ($evidence) {
             $evidence->push($this->row($item->name, ($item->product?->name ?: $item->lot?->product?->name ?: 'Produit / lot'), $item->value.' '.$item->unit.' &middot; '.($item->method ? 'M&eacute;thode document&eacute;e' : 'M&eacute;thode manquante'), '/workspace/indicators'));
         });
+
         return $evidence->sortByDesc('date')->take(5)->values()->all();
     }
 
@@ -298,6 +306,7 @@ class TraceabilityDashboardController extends Controller
             Distribution::where('user_id', $user->id)->whereIn('status', ['planned', 'in_transit'])->where(fn ($q) => $q->whereNull('shipped_at')->orWhereNull('expected_at'))->limit(3)->get()->each(fn ($d) => $extra->push($this->alertRow('Informations de livraison manquantes', $d->reference.' : dates d’exp&eacute;dition ou pr&eacute;vue &agrave; compl&eacute;ter', 'info', '/workspace/distributions')));
         }
         $items = collect($items)->concat($extra)->unique(fn ($item) => $item['title'].'|'.$item['detail'])->take(5)->values()->all();
+
         return ['count' => max($count, count($items)), 'items' => collect($items)];
     }
 

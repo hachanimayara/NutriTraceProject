@@ -1,12 +1,17 @@
 <?php
 
+use App\Http\Controllers\Admin\DocumentAnalysisController;
+use App\Http\Controllers\Admin\TraceabilityAlertController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\LocalRecaptchaDiagnosticController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PublicCatalogController;
+use App\Http\Controllers\TraceabilityDashboardController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', [App\Http\Controllers\PublicCatalogController::class, 'home'])->name('front.home');
+Route::get('/', [PublicCatalogController::class, 'home'])->name('front.home');
 Route::get('/about', fn () => view('front.about'))->name('front.about');
 
 // Keep the public entry points visible even when a session is already active.
@@ -15,7 +20,7 @@ Route::get('/login', [AuthController::class, 'login'])->name('login');
 Route::get('/register', [AuthController::class, 'register'])->name('register');
 
 if (app()->environment('local')) {
-    Route::get('/_local/diagnostics/recaptcha', App\Http\Controllers\LocalRecaptchaDiagnosticController::class)
+    Route::get('/_local/diagnostics/recaptcha', LocalRecaptchaDiagnosticController::class)
         ->name('local.diagnostics.recaptcha');
 }
 
@@ -36,7 +41,7 @@ Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->n
 Route::middleware(['auth', 'approved'])->group(function () {
     Route::get('/dashboard', fn (Request $r) => redirect($r->user()->getDashboardUrl()))->name('dashboard');
     foreach (['producteur', 'transformateur', 'distributeur'] as $role) {
-        Route::get('/'.$role.'/dashboard', [App\Http\Controllers\TraceabilityDashboardController::class, 'index'])
+        Route::get('/'.$role.'/dashboard', [TraceabilityDashboardController::class, 'index'])
             ->middleware('role:'.$role)->name($role.'.dashboard');
     }
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -73,17 +78,17 @@ Route::middleware(['auth', 'approved'])->group(function () {
 
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'approved', 'role:admin'])->group(function () {
     Route::get('/', fn () => redirect()->route('admin.dashboard'));
-    Route::get('/dashboard', [App\Http\Controllers\TraceabilityDashboardController::class, 'index'])->name('dashboard');
-    Route::get('/alerts', [App\Http\Controllers\Admin\TraceabilityAlertController::class, 'index'])->name('alerts.index');
-    Route::post('/alerts/analyze', [App\Http\Controllers\Admin\TraceabilityAlertController::class, 'analyze'])->name('alerts.analyze');
-    Route::post('/alerts/{alert}/resolve', [App\Http\Controllers\Admin\TraceabilityAlertController::class, 'resolve'])->name('alerts.resolve');
-    Route::get('/document-analyses', [App\Http\Controllers\Admin\DocumentAnalysisController::class, 'index'])->name('document-analyses.index');
-    Route::post('/document-analyses', [App\Http\Controllers\Admin\DocumentAnalysisController::class, 'store'])->middleware('throttle:10,1')->name('document-analyses.store');
-    Route::get('/document-analyses/{analysis}', [App\Http\Controllers\Admin\DocumentAnalysisController::class, 'show'])->name('document-analyses.show');
-    Route::post('/document-analyses/{analysis}/analyze', [App\Http\Controllers\Admin\DocumentAnalysisController::class, 'analyze'])->middleware('throttle:10,1')->name('document-analyses.analyze');
-    Route::get('/document-analyses/{analysis}/file', [App\Http\Controllers\Admin\DocumentAnalysisController::class, 'download'])->name('document-analyses.file');
-    Route::put('/document-analyses/{analysis}/review', [App\Http\Controllers\Admin\DocumentAnalysisController::class, 'review'])->name('document-analyses.review');
-    Route::delete('/document-analyses/{analysis}', [App\Http\Controllers\Admin\DocumentAnalysisController::class, 'destroy'])->name('document-analyses.destroy');
+    Route::get('/dashboard', [TraceabilityDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/alerts', [TraceabilityAlertController::class, 'index'])->name('alerts.index');
+    Route::post('/alerts/analyze', [TraceabilityAlertController::class, 'analyze'])->name('alerts.analyze');
+    Route::post('/alerts/{alert}/resolve', [TraceabilityAlertController::class, 'resolve'])->name('alerts.resolve');
+    Route::get('/document-analyses', [DocumentAnalysisController::class, 'index'])->name('document-analyses.index');
+    Route::post('/document-analyses', [DocumentAnalysisController::class, 'store'])->middleware('throttle:10,1')->name('document-analyses.store');
+    Route::get('/document-analyses/{analysis}', [DocumentAnalysisController::class, 'show'])->name('document-analyses.show');
+    Route::post('/document-analyses/{analysis}/analyze', [DocumentAnalysisController::class, 'analyze'])->middleware('throttle:10,1')->name('document-analyses.analyze');
+    Route::get('/document-analyses/{analysis}/file', [DocumentAnalysisController::class, 'download'])->name('document-analyses.file');
+    Route::put('/document-analyses/{analysis}/review', [DocumentAnalysisController::class, 'review'])->name('document-analyses.review');
+    Route::delete('/document-analyses/{analysis}', [DocumentAnalysisController::class, 'destroy'])->name('document-analyses.destroy');
     Route::get('/users/export', [AdminUserController::class, 'export'])->name('users.export');
     Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
     Route::get('/users/{user}', [AdminUserController::class, 'show'])->withTrashed()->name('users.show');

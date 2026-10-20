@@ -18,7 +18,3 @@ class MonthlyTarget extends Component
         return view('components.ecommerce.monthly-target');
     }
 }
-
-
-
-

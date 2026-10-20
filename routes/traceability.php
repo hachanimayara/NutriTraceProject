@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\MapDistancesController;
+use App\Http\Controllers\OpenFoodFactsController;
+use App\Http\Controllers\ProducerQrCodeController;
 use App\Http\Controllers\PublicCatalogController;
 use App\Http\Controllers\TraceabilityController;
 use Illuminate\Support\Facades\Route;
@@ -18,12 +21,12 @@ Route::get('/workspace/catalogue/products/{product}', fn (int $product) => redir
 
 Route::middleware(['auth', 'approved'])->prefix('workspace')->name('workspace.')->group(function () {
     Route::middleware('role:transformateur')->prefix('open-food-facts')->name('open-food-facts.')->group(function () {
-        Route::get('/', [App\Http\Controllers\OpenFoodFactsController::class, 'index'])->name('index');
-        Route::get('/search', [App\Http\Controllers\OpenFoodFactsController::class, 'search'])->middleware('throttle:20,1')->name('search');
-        Route::post('/import', [App\Http\Controllers\OpenFoodFactsController::class, 'import'])->name('import');
+        Route::get('/', [OpenFoodFactsController::class, 'index'])->name('index');
+        Route::get('/search', [OpenFoodFactsController::class, 'search'])->middleware('throttle:20,1')->name('search');
+        Route::post('/import', [OpenFoodFactsController::class, 'import'])->name('import');
     });
-    Route::get('/qr-codes', [App\Http\Controllers\ProducerQrCodeController::class, 'index'])->middleware('role:producteur')->name('qr-codes.index');
-    Route::get('/map-distances', [App\Http\Controllers\MapDistancesController::class, 'index'])->middleware('role:distributeur')->name('map-distances');
+    Route::get('/qr-codes', [ProducerQrCodeController::class, 'index'])->middleware('role:producteur')->name('qr-codes.index');
+    Route::get('/map-distances', [MapDistancesController::class, 'index'])->middleware('role:distributeur')->name('map-distances');
     Route::get('/{resource}', [TraceabilityController::class, 'index'])->whereIn('resource', ['farms', 'products', 'lots', 'transformations', 'stores', 'distributions', 'certifications', 'indicators'])->name('resources.index');
     Route::get('/{resource}/create', [TraceabilityController::class, 'create'])->whereIn('resource', ['farms', 'products', 'lots', 'transformations', 'stores', 'distributions', 'certifications', 'indicators'])->name('resources.create');
     Route::post('/{resource}', [TraceabilityController::class, 'store'])->whereIn('resource', ['farms', 'products', 'lots', 'transformations', 'stores', 'distributions', 'certifications', 'indicators'])->name('resources.store');

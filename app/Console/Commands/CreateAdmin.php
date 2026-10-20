@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\User;
 use Illuminate\Console\Command;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 
 class CreateAdmin extends Command
@@ -44,7 +45,7 @@ class CreateAdmin extends Command
                 $user->forceFill([
                     'password' => $password,
                     'session_version' => $user->session_version + 1,
-                    'remember_token' => \Illuminate\Support\Str::random(60),
+                    'remember_token' => Str::random(60),
                 ])->save();
             }
         }
