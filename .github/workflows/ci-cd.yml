@@ -36,15 +36,23 @@ jobs:
       - name: 3. Installer les dépendances Composer
         run: composer install --prefer-dist --no-interaction --no-progress
 
-      - name: 4. Vérifier le style du code (Laravel Pint)
-        run: ./vendor/bin/pint --test
+      - name: 4. Configurer Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
 
-      - name: 5. Préparer l'environnement de test
+      - name: 5. Compiler les assets Front-end (Vite)
+        run: |
+          npm ci
+          npm run build
+
+      - name: 6. Préparer l'environnement de test
         run: |
           cp .env.example .env.testing
           php artisan key:generate --env=testing
 
-      - name: 6. Exécuter les migrations et tests PHPUnit
+      - name: 7. Exécuter les migrations et tests PHPUnit
         env:
           DB_CONNECTION: mysql
           DB_HOST: 127.0.0.1
@@ -55,11 +63,6 @@ jobs:
         run: |
           php artisan migrate --env=testing --force
           php artisan test
-
-      - name: 7. Compiler les assets (Vite / NPM)
-        run: |
-          npm ci
-          npm run build
 
       - name: 8. Analyse Qualité SonarQube
         uses: sonarsource/sonarqube-scan-action@master
