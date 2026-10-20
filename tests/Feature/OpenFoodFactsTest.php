@@ -77,6 +77,21 @@ class OpenFoodFactsTest extends TestCase
             ->assertSee('id="manual-entry-dialog"', false)->assertSee('data-open-manual-dialog', false);
     }
 
+    public function test_name_search_is_used_when_the_submitted_barcode_has_no_match(): void
+    {
+        Cache::flush();
+        Http::fake([
+            'world.openfoodfacts.org/*' => Http::response(['status' => 'failure', 'product' => null]),
+            'search.openfoodfacts.org/*' => Http::response(['hits' => [
+                ['code' => '6191660000300', 'product_name' => 'Denya', 'generic_name' => ['fr' => 'Produit laitier', 'en' => 'Dairy product'], 'brands' => ['Denya', 'Denya Foods']],
+            ]]),
+        ]);
+        $transformer = User::factory()->create(['role' => 'transformateur', 'status' => 'approved']);
+
+        $this->actingAs($transformer)->get(route('workspace.open-food-facts.search', ['query' => 'denya', 'barcode' => '61916600030']))
+            ->assertOk()->assertSee('Voici les résultats correspondant au nom saisi')->assertSee('Denya')->assertSee('6191660000300');
+    }
+
     public function test_other_roles_cannot_access_the_catalogue_or_import_data(): void
     {
         $producer = User::factory()->create(['role' => 'producteur', 'status' => 'approved']);

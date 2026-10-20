@@ -89,13 +89,36 @@ class OpenFoodFactsService
         ], fn ($item) => $item !== null);
 
         return [
-            'code' => (string) ($p['code'] ?? $barcode), 'name' => (string) ($p['product_name'] ?? ''),
-            'generic_name' => (string) ($p['generic_name'] ?? ''), 'brands' => (string) ($p['brands'] ?? ''),
-            'categories' => (string) ($p['categories'] ?? ''), 'quantity' => (string) ($p['quantity'] ?? ''),
-            'ingredients' => (string) ($p['ingredients_text'] ?? ''), 'allergens' => (string) ($p['allergens'] ?? ''),
-            'traces' => (string) ($p['traces'] ?? ''), 'nutrition' => $nutrition,
-            'nutri_score' => (string) ($p['nutrition_grades'] ?? ''), 'eco_score' => (string) ($p['ecoscore_grade'] ?? ''),
-            'image' => (string) ($p['image_front_url'] ?? $p['image_url'] ?? ''),
+            'code' => $this->text($p['code'] ?? $barcode), 'name' => $this->text($p['product_name'] ?? ''),
+            'generic_name' => $this->text($p['generic_name'] ?? ''), 'brands' => $this->text($p['brands'] ?? ''),
+            'categories' => $this->text($p['categories'] ?? ''), 'quantity' => $this->text($p['quantity'] ?? ''),
+            'ingredients' => $this->text($p['ingredients_text'] ?? ''), 'allergens' => $this->text($p['allergens'] ?? ''),
+            'traces' => $this->text($p['traces'] ?? ''), 'nutrition' => $nutrition,
+            'nutri_score' => $this->text($p['nutrition_grades'] ?? ''), 'eco_score' => $this->text($p['ecoscore_grade'] ?? ''),
+            'image' => $this->text($p['image_front_url'] ?? $p['image_url'] ?? ''),
         ];
+    }
+
+    private function text(mixed $value): string
+    {
+        if (is_string($value) || is_numeric($value)) {
+            return (string) $value;
+        }
+
+        if (! is_array($value)) {
+            return '';
+        }
+
+        foreach (['fr', 'en'] as $language) {
+            if (isset($value[$language])) {
+                return $this->text($value[$language]);
+            }
+        }
+
+        return collect($value)
+            ->map(fn ($item) => $this->text($item))
+            ->filter(fn (string $item) => $item !== '')
+            ->unique()
+            ->implode(', ');
     }
 }

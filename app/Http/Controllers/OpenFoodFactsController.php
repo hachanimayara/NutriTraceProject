@@ -34,7 +34,14 @@ class OpenFoodFactsController extends Controller
             if (! empty($input['barcode'])) {
                 $detail = $off->product($input['barcode']);
                 if (! $detail) {
-                    $message = 'Aucun produit trouvé pour ce code-barres. Vous pouvez saisir les informations manuellement.';
+                    if (! empty($input['query'])) {
+                        $results = $off->search(trim($input['query']));
+                        $message = $results !== []
+                            ? 'Aucun produit trouvé pour ce code-barres. Voici les résultats correspondant au nom saisi.'
+                            : 'Aucun produit trouvé pour ce code-barres ni pour ce nom. Vous pouvez saisir les informations manuellement.';
+                    } else {
+                        $message = 'Aucun produit trouvé pour ce code-barres. Vous pouvez saisir les informations manuellement.';
+                    }
                 }
             } else {
                 $results = $off->search(trim($input['query']));
