@@ -51,7 +51,7 @@
                         <strong class="block">{{ $passkey->name }}</strong>
                         <small class="text-gray-500">Ajouté le {{ $passkey->created_at?->format('d/m/Y') ?? '—' }}{{ $passkey->last_used_at ? ' · Utilisé le '.$passkey->last_used_at->format('d/m/Y') : '' }}</small>
                     </span>
-                    <form method="post" action="{{ route('passkey.destroy', $passkey) }}" onsubmit="return confirm('Révoquer cette clé d’accès ?')">
+                    <form method="post" action="{{ route('passkey.destroy', $passkey) }}" data-confirm-action="Révoquer cette clé d’accès ?">
                         @csrf @method('DELETE')
                         <button type="submit" aria-label="Révoquer {{ $passkey->name }}">Révoquer</button>
                     </form>
@@ -60,7 +60,7 @@
         </ul>
     </div>
 
-    <form method="post" action="{{ route('profile.passkeys.disable') }}" class="profile-note" onsubmit="return confirm('Désactiver la connexion biométrique et supprimer toutes les clés d’accès de ce compte ?')">
+    <form method="post" action="{{ route('profile.passkeys.disable') }}" class="profile-note" data-confirm-action="Désactiver la connexion biométrique et supprimer toutes les clés d’accès de ce compte ?">
         @csrf @method('DELETE')
         <strong class="block text-red-800">Désactiver la reconnaissance faciale</strong>
         <span class="mt-1 block">Toutes les clés d’accès NutriTrace seront supprimées. Vous pourrez toujours vous connecter avec votre adresse e-mail et votre mot de passe.</span>

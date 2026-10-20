@@ -9,7 +9,6 @@
         'producteur' => 'Producteur',
         'transformateur' => 'Transformateur',
         'distributeur' => 'Distributeur',
-        'consommateur' => 'Consommateur',
     ];
     $statusLabels = ['approved' => 'Approuvé', 'pending' => 'En attente', 'suspended' => 'Suspendu', 'deleted' => 'Supprimé'];
     $statusClasses = [
@@ -68,7 +67,7 @@
     </section>
 
     <section class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
-        <form method="get" action="{{ route('admin.users.index') }}" class="flex flex-col gap-3 border-b border-gray-100 p-4 sm:flex-row dark:border-gray-800">
+        <form method="get" data-list-filters action="{{ route('admin.users.index') }}" class="flex flex-col gap-3 border-b border-gray-100 p-4 sm:flex-row dark:border-gray-800">
             <label class="relative min-w-0 flex-1">
                 <span class="sr-only">Rechercher par nom ou e-mail</span>
                 <svg class="absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m16 16 4 4" stroke-linecap="round"/></svg>
@@ -76,7 +75,7 @@
             </label>
             <label><span class="sr-only">Filtrer par rôle</span><select name="role" aria-label="Filtrer par rôle" class="h-12 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-800 outline-none focus:border-green-700 focus:ring-4 focus:ring-green-700/10 sm:w-52 dark:border-gray-700 dark:bg-gray-900 dark:text-white"><option value="">Tous les rôles</option>@foreach($roleLabels as $key => $label)<option value="{{ $key }}" @selected(request('role') === $key)>{{ $label }}</option>@endforeach</select></label>
             <label><span class="sr-only">Filtrer par statut</span><select name="status" aria-label="Filtrer par statut" class="h-12 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-800 outline-none focus:border-green-700 focus:ring-4 focus:ring-green-700/10 sm:w-48 dark:border-gray-700 dark:bg-gray-900 dark:text-white"><option value="">Tous les statuts</option><option value="pending" @selected(request('status') === 'pending')>En attente</option><option value="approved" @selected(request('status') === 'approved')>Approuvé</option><option value="suspended" @selected(request('status') === 'suspended')>Suspendu</option></select></label>
-            <button class="inline-flex h-12 shrink-0 items-center justify-center rounded-xl bg-green-800 px-5 text-sm font-semibold text-white transition hover:bg-green-900 focus:outline-none focus:ring-4 focus:ring-green-800/20">Filtrer</button>
+            <button type="submit" class="inline-flex h-12 shrink-0 items-center justify-center rounded-xl bg-green-800 px-5 text-sm font-semibold text-white transition hover:bg-green-900 focus:outline-none focus:ring-4 focus:ring-green-800/20">Filtrer</button>
             <a href="{{ route('admin.users.export', request()->only('q', 'role', 'status')) }}" class="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-xl border border-green-200 px-4 text-sm font-semibold text-green-800 transition hover:bg-green-50 dark:border-green-900 dark:text-green-300 dark:hover:bg-green-900/20">
                 <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V4m-4 4 4-4 4 4M4 15v4h16v-4" stroke-linecap="round" stroke-linejoin="round"/></svg>Exporter
             </a>
@@ -95,7 +94,7 @@
         <div class="space-y-3 bg-gray-50/70 p-4 sm:p-5 dark:bg-gray-900/30">
             @forelse($users as $user)
                 @php
-                    $roleLabel = $roleLabels[$user->role] ?? ucfirst($user->role);
+                    $roleLabel = $roleLabels[$user->role] ?? ($user->role === 'consommateur' ? 'Ancien compte consommateur' : ucfirst($user->role));
                     $initials = collect(explode(' ', trim($user->name)))->filter()->take(2)->map(fn ($part) => mb_substr($part, 0, 1))->implode('');
                 @endphp
                 <article class="flex flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition hover:border-green-200 hover:shadow-md sm:flex-row sm:items-center sm:justify-between sm:p-5 dark:border-gray-800 dark:bg-gray-900">
@@ -135,10 +134,7 @@
             @endforelse
         </div>
 
-        <footer class="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-5 py-4 dark:border-gray-800">
-            <p class="text-xs text-gray-500">{{ $users->firstItem() ?? 0 }}–{{ $users->lastItem() ?? 0 }} sur {{ $users->total() }} utilisateur(s)</p>
-            <div>{{ $users->onEachSide(1)->links() }}</div>
-        </footer>
+        <x-pagination :paginator="$users" />
     </section>
 </div>
 @endsection

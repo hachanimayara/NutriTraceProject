@@ -6,8 +6,13 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', fn () => view('front.home'))->name('front.home');
+Route::get('/', [App\Http\Controllers\PublicCatalogController::class, 'home'])->name('front.home');
 Route::get('/about', fn () => view('front.about'))->name('front.about');
+
+// Keep the public entry points visible even when a session is already active.
+// The form submissions remain guest-only below.
+Route::get('/login', [AuthController::class, 'login'])->name('login');
+Route::get('/register', [AuthController::class, 'register'])->name('register');
 
 if (app()->environment('local')) {
     Route::get('/_local/diagnostics/recaptcha', App\Http\Controllers\LocalRecaptchaDiagnosticController::class)
@@ -15,9 +20,7 @@ if (app()->environment('local')) {
 }
 
 Route::middleware('guest')->group(function () {
-    Route::get('/login', [AuthController::class, 'login'])->name('login');
     Route::post('/login', [AuthController::class, 'authenticate'])->middleware('throttle:5,1')->name('login.store');
-    Route::get('/register', [AuthController::class, 'register'])->name('register');
     Route::post('/register', [AuthController::class, 'storeRegistration'])->middleware('throttle:3,1')->name('register.store');
     Route::get('/forgot-password', [AuthController::class, 'forgot'])->name('password.request');
     Route::post('/forgot-password', [AuthController::class, 'sendReset'])->middleware('throttle:3,1')->name('password.email');
@@ -32,8 +35,8 @@ Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->n
 
 Route::middleware(['auth', 'approved'])->group(function () {
     Route::get('/dashboard', fn (Request $r) => redirect($r->user()->getDashboardUrl()))->name('dashboard');
-    foreach (['producteur', 'transformateur', 'distributeur', 'consommateur'] as $role) {
-        Route::get('/'.$role.'/dashboard', fn (Request $r) => view('dashboard.role', ['role' => $role]))
+    foreach (['producteur', 'transformateur', 'distributeur'] as $role) {
+        Route::get('/'.$role.'/dashboard', [App\Http\Controllers\TraceabilityDashboardController::class, 'index'])
             ->middleware('role:'.$role)->name($role.'.dashboard');
     }
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -41,7 +44,19 @@ Route::middleware(['auth', 'approved'])->group(function () {
     Route::put('/profile/password', [ProfileController::class, 'password'])->middleware('throttle:5,1')->name('profile.password');
     Route::post('/profile/passkeys/consent', [ProfileController::class, 'consentPasskeys'])->middleware('throttle:3,1')->name('profile.passkeys.consent');
     Route::delete('/profile/passkeys', [ProfileController::class, 'disablePasskeys'])->middleware('throttle:3,1')->name('profile.passkeys.disable');
-    Route::get('/notifications', fn (Request $r) => view('profile.notifications', ['notifications' => $r->user()->notifications()->latest()->paginate(20)]))->name('notifications.index');
+    Route::get('/notifications', function (Request $request) {
+        $filters = $request->validate([
+            'q' => ['nullable', 'string', 'max:120'],
+            'read' => ['nullable', 'in:read,unread'],
+        ]);
+        $notifications = $request->user()->notifications()
+            ->when($filters['q'] ?? null, fn ($query, $term) => $query->where('data->message', 'like', '%'.$term.'%'))
+            ->when(($filters['read'] ?? null) === 'read', fn ($query) => $query->whereNotNull('read_at'))
+            ->when(($filters['read'] ?? null) === 'unread', fn ($query) => $query->whereNull('read_at'))
+            ->latest()->paginate(20)->withQueryString();
+
+        return view('profile.notifications', compact('notifications'));
+    })->name('notifications.index');
     Route::post('/notifications/{id}/read', function (Request $r, string $id) {
         $r->user()->notifications()->whereKey($id)->update(['read_at' => now()]);
 
@@ -58,7 +73,17 @@ Route::middleware(['auth', 'approved'])->group(function () {
 
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'approved', 'role:admin'])->group(function () {
     Route::get('/', fn () => redirect()->route('admin.dashboard'));
-    Route::get('/dashboard', fn () => view('dashboard.role', ['role' => 'admin']))->name('dashboard');
+    Route::get('/dashboard', [App\Http\Controllers\TraceabilityDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/alerts', [App\Http\Controllers\Admin\TraceabilityAlertController::class, 'index'])->name('alerts.index');
+    Route::post('/alerts/analyze', [App\Http\Controllers\Admin\TraceabilityAlertController::class, 'analyze'])->name('alerts.analyze');
+    Route::post('/alerts/{alert}/resolve', [App\Http\Controllers\Admin\TraceabilityAlertController::class, 'resolve'])->name('alerts.resolve');
+    Route::get('/document-analyses', [App\Http\Controllers\Admin\DocumentAnalysisController::class, 'index'])->name('document-analyses.index');
+    Route::post('/document-analyses', [App\Http\Controllers\Admin\DocumentAnalysisController::class, 'store'])->middleware('throttle:10,1')->name('document-analyses.store');
+    Route::get('/document-analyses/{analysis}', [App\Http\Controllers\Admin\DocumentAnalysisController::class, 'show'])->name('document-analyses.show');
+    Route::post('/document-analyses/{analysis}/analyze', [App\Http\Controllers\Admin\DocumentAnalysisController::class, 'analyze'])->middleware('throttle:10,1')->name('document-analyses.analyze');
+    Route::get('/document-analyses/{analysis}/file', [App\Http\Controllers\Admin\DocumentAnalysisController::class, 'download'])->name('document-analyses.file');
+    Route::put('/document-analyses/{analysis}/review', [App\Http\Controllers\Admin\DocumentAnalysisController::class, 'review'])->name('document-analyses.review');
+    Route::delete('/document-analyses/{analysis}', [App\Http\Controllers\Admin\DocumentAnalysisController::class, 'destroy'])->name('document-analyses.destroy');
     Route::get('/users/export', [AdminUserController::class, 'export'])->name('users.export');
     Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
     Route::get('/users/{user}', [AdminUserController::class, 'show'])->withTrashed()->name('users.show');
@@ -67,3 +92,5 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'approved', 'role:ad
     Route::post('/users/{user}/suspend', [AdminUserController::class, 'suspend'])->name('users.suspend');
     Route::delete('/users/{user}', [AdminUserController::class, 'destroy'])->name('users.destroy');
 });
+
+require __DIR__.'/traceability.php';

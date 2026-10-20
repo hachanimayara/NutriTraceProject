@@ -17,7 +17,7 @@ class User extends Authenticatable implements PasskeyUser
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, PasskeyAuthenticatable, SoftDeletes;
 
-    public const PUBLIC_ROLES = ['producteur', 'transformateur', 'distributeur', 'consommateur'];
+    public const PUBLIC_ROLES = ['producteur', 'transformateur', 'distributeur'];
 
     /**
      * The attributes that are mass assignable.
@@ -81,7 +81,7 @@ class User extends Authenticatable implements PasskeyUser
             'producteur' => route('producteur.dashboard'),
             'transformateur' => route('transformateur.dashboard'),
             'distributeur' => route('distributeur.dashboard'),
-            default => route('consommateur.dashboard'),
+            default => route('public.catalogue'),
         };
     }
 

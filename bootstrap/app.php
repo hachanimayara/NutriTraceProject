@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnsureApproved;
 use App\Http\Middleware\EnsureRole;
+use App\Http\Middleware\EnsureUtf8Html;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -15,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        $middleware->appendToGroup('web', EnsureUtf8Html::class);
         $middleware->alias([
             'approved' => EnsureApproved::class,
             'role' => EnsureRole::class,

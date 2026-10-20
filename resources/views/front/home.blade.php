@@ -1,46 +1,35 @@
 @extends('layouts.front')
-
-@section('title', 'Accueil | NutriTrace')
-@section('description', 'NutriTrace vous aide à mieux comprendre votre alimentation grâce à des repères clairs et accessibles.')
-
+@section('title', 'NutriTrace · De la ferme à l’assiette')
+@section('description', 'NutriTrace aide les acteurs alimentaires à documenter la traçabilité.')
 @section('content')
-<div class="container-fluid p-0 mb-5">
-    <div id="header-carousel" class="carousel slide" data-bs-ride="carousel">
-        <div class="carousel-inner">
-            <div class="carousel-item active">
-                <img class="w-100" src="{{ asset('themes/foody/img/carousel-1.jpg') }}" alt="Produits frais et alimentation naturelle">
-                <div class="carousel-caption"><div class="container"><div class="row justify-content-start"><div class="col-lg-7">
-                    <h1 class="display-2 mb-5 animated slideInDown">Mieux manger commence par mieux comprendre.</h1>
-                    <a href="#approche" class="btn btn-primary rounded-pill py-sm-3 px-sm-5">Notre approche</a>
-                    <a href="{{ route('front.about') }}" class="btn btn-secondary rounded-pill py-sm-3 px-sm-5 ms-3">À propos</a>
-                </div></div></div></div>
+<style>
+    .nt-home{--forest:#173f30;--green:#2d6a4f;--mint:#e8f5ec;--ink:#1f2937;--muted:#68766e;color:var(--ink);padding-top:150px}
+    .nt-hero{padding:55px max(5vw,24px) 70px;background:radial-gradient(circle at 78% 30%,#e8f5ec 0,transparent 27%),linear-gradient(130deg,#fbfcf7,#f1f7f1);display:grid;grid-template-columns:1.05fr .95fr;gap:7vw;align-items:center}
+    .nt-eyebrow{display:inline-block;color:var(--green);font-size:12px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase}.nt-hero h1{max-width:700px;margin:18px 0;color:var(--forest);font-size:clamp(38px,5vw,66px);line-height:1.07;letter-spacing:-2px}.nt-hero-copy>p{max-width:590px;color:var(--muted);font-size:17px;line-height:1.7}.nt-hero-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:25px}.nt-hero-actions a{border-radius:999px;padding:13px 23px;font-weight:700;text-decoration:none}.nt-primary{background:var(--green);color:#fff}.nt-primary:hover{background:#24573f;color:#fff}.nt-secondary{border:1px solid #cfddd3;color:var(--forest);background:#fff}.nt-trust{display:flex;gap:18px;flex-wrap:wrap;margin-top:25px;color:var(--muted);font-size:12px}.nt-trust span:before{content:'✓';margin-right:6px;color:var(--green);font-weight:bold}.nt-visual{height:430px;position:relative}.nt-visual>img{width:100%;height:100%;object-fit:cover;border-radius:46% 54% 48% 52%/42% 44% 56% 58%;box-shadow:0 18px 50px #173f3022}.nt-float{position:absolute;display:flex;align-items:center;gap:11px;border:1px solid #e3ebe5;border-radius:15px;background:#fff;padding:13px 16px;box-shadow:0 10px 30px #173f3018}.nt-float.top{left:-34px;top:44px}.nt-float.bottom{right:-24px;bottom:35px}.nt-float i{display:grid;place-items:center;width:37px;height:37px;border-radius:12px;background:var(--mint);color:var(--green);font-style:normal}.nt-float strong,.nt-float small{display:block}.nt-float strong{font-size:12px}.nt-float small{margin-top:3px;color:var(--muted);font-size:10px}.nt-section{padding:72px max(5vw,24px)}.nt-section.soft{background:#f4f8f4}.nt-section-head{max-width:700px;margin:0 auto;text-align:center}.nt-section-head h2{margin:9px 0;color:var(--forest);font-size:clamp(27px,3vw,38px)}.nt-section-head p{color:var(--muted);line-height:1.65}.nt-steps{display:grid;grid-template-columns:repeat(4,1fr);max-width:1120px;margin:auto}.nt-step{padding:0 22px;text-align:center}.nt-step i{display:grid;place-items:center;width:54px;height:54px;margin:auto;border-radius:17px;background:var(--mint);color:var(--green);font-style:normal;font-weight:800}.nt-step b{display:block;margin:15px 0 6px;color:var(--forest)}.nt-step p{color:var(--muted);font-size:13px;line-height:1.5}
+    @media(max-width:850px){.nt-home{padding-top:125px}.nt-hero{grid-template-columns:1fr;padding-top:35px}.nt-visual{height:340px;margin:15px 25px}.nt-steps{grid-template-columns:1fr 1fr;gap:24px 0}}@media(max-width:560px){.nt-hero{padding-left:20px;padding-right:20px}.nt-hero h1{letter-spacing:-1px}.nt-visual{height:290px;margin:12px 0}.nt-float.top{left:-7px}.nt-float.bottom{right:-7px}.nt-steps{grid-template-columns:1fr}.nt-section{padding:55px 20px}}
+    .nt-products{padding:72px max(5vw,24px);background:#fff}.nt-products-head{display:flex;justify-content:space-between;align-items:end;gap:20px;margin-bottom:25px}.nt-products-head h2{margin:8px 0 0;color:#173f30;font-size:clamp(27px,3vw,38px)}.nt-all-products{color:#2d6a4f;font-weight:700;text-decoration:none;white-space:nowrap}.nt-all-products:hover{text-decoration:underline}.nt-product-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}.nt-product-card{overflow:hidden;border:1px solid #e1e8e2;border-radius:15px;background:#fff;display:flex;flex-direction:column;min-width:0}.nt-product-image{height:190px;background:#f2f6f2;display:grid;place-items:center;color:#6f917c;font-size:42px;overflow:hidden}.nt-product-image img{width:100%;height:100%;object-fit:cover}.nt-product-body{padding:18px;display:flex;flex:1;flex-direction:column}.nt-product-meta{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#2d6a4f;font-weight:800}.nt-product-body h3{font-size:19px;line-height:1.25;margin:8px 0;color:#173f30}.nt-product-body p{color:#68766e;font-size:13px;margin:0 0 16px}.nt-product-link{margin-top:auto;display:inline-flex;align-self:flex-start;border-radius:8px;padding:9px 12px;background:#2d6a4f;color:#fff;font-size:13px;font-weight:700;text-decoration:none}.nt-product-link:hover{background:#24573f;color:#fff}.nt-products-empty{padding:28px;border:1px dashed #cbd8ce;border-radius:14px;text-align:center;color:#68766e}@media(max-width:1000px){.nt-product-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:560px){.nt-products{padding:55px 20px}.nt-products-head{align-items:flex-start;flex-direction:column}.nt-product-grid{grid-template-columns:1fr}.nt-product-image{height:220px}}
+</style>
+<main class="nt-home">
+    <section class="nt-hero">
+        <div class="nt-hero-copy"><span class="nt-eyebrow">La transparence, de la ferme à l’assiette</span><h1>Connaissez l’histoire des produits que vous choisissez.</h1><p>NutriTrace aide chaque acteur de la chaîne alimentaire à documenter les informations de traçabilité.</p><div class="nt-hero-actions"><a class="nt-primary" href="{{ route('login') }}">Accéder à mon espace</a><a class="nt-secondary" href="{{ route('register') }}">Créer un compte</a></div><div class="nt-trust"><span>Informations sourcées</span><span>Étapes consultables</span><span>Limites affichées</span></div></div>
+        <div class="nt-visual"><img src="{{ asset('themes/foody/img/carousel-1.jpg') }}" alt="Cultures agricoles" loading="eager"><div class="nt-float top"><i>⌖</i><span><strong>Provenance documentée</strong><small>Informations saisies par les acteurs</small></span></div><div class="nt-float bottom"><i>↗</i><span><strong>Parcours du produit</strong><small>Étapes enregistrées dans NutriTrace</small></span></div></div>
+    </section>
+    <section class="nt-products" aria-labelledby="nt-products-title">
+        <header class="nt-products-head"><div><span class="nt-eyebrow">Catalogue alimentaire</span><h2 id="nt-products-title">D&eacute;couvrez nos produits</h2></div><a class="nt-all-products" href="{{ route('public.catalogue') }}">Voir tous les produits &rarr;</a></header>
+        @if($products->isNotEmpty())
+            <div class="nt-product-grid">
+                @foreach($products as $product)
+                    <article class="nt-product-card">
+                        <a href="{{ route('public.products.show', $product->id) }}" aria-label="Voir le produit {{ $product->name }}" class="nt-product-image">
+                            @if($product->image_name)<img src="{{ route('public.catalogue.product-image', $product->id) }}" alt="{{ $product->name }}" loading="lazy">@else<span aria-hidden="true">Produit</span>@endif
+                        </a>
+                        <div class="nt-product-body"><span class="nt-product-meta">{{ $product->category ?: 'Produit alimentaire' }} &middot; {{ $product->origin ?: $product->farm?->location ?: 'Origine non renseign&eacute;e' }}</span><h3>{{ $product->name }}</h3><p>{{ $product->farm?->name ?: 'Exploitation non renseign&eacute;e' }}</p><a class="nt-product-link" href="{{ route('public.products.show', $product->id) }}">Voir le produit</a></div>
+                    </article>
+                @endforeach
             </div>
-            <div class="carousel-item">
-                <img class="w-100" src="{{ asset('themes/foody/img/carousel-2.jpg') }}" alt="Une alimentation équilibrée au quotidien">
-                <div class="carousel-caption"><div class="container"><div class="row justify-content-start"><div class="col-lg-7">
-                    <h1 class="display-2 mb-5 animated slideInDown">Des choix plus éclairés, à votre rythme.</h1>
-                    <a href="{{ route('front.about') }}" class="btn btn-primary rounded-pill py-sm-3 px-sm-5">Découvrir NutriTrace</a>
-                </div></div></div></div>
-            </div>
-        </div>
-        <button class="carousel-control-prev" type="button" data-bs-target="#header-carousel" data-bs-slide="prev" aria-label="Précédent"><span class="carousel-control-prev-icon" aria-hidden="true"></span></button>
-        <button class="carousel-control-next" type="button" data-bs-target="#header-carousel" data-bs-slide="next" aria-label="Suivant"><span class="carousel-control-next-icon" aria-hidden="true"></span></button>
-    </div>
-</div>
-
-<section class="container-xxl py-5" id="approche"><div class="container"><div class="row g-5 align-items-center">
-    <div class="col-lg-6 wow fadeIn"><div class="about-img position-relative overflow-hidden p-5 pe-0"><img class="img-fluid w-100" src="{{ asset('themes/foody/img/about.jpg') }}" alt="Sélection de produits frais"></div></div>
-    <div class="col-lg-6 wow fadeIn"><h2 class="display-5 mb-4">Une approche simple de la nutrition</h2><p class="mb-4">NutriTrace a pour vocation de rendre les informations sur l’alimentation plus accessibles et de vous accompagner dans vos choix du quotidien.</p>
-        <p><i class="fa fa-check text-primary me-3"></i>Des informations présentées clairement</p><p><i class="fa fa-check text-primary me-3"></i>Des repères pensés pour le quotidien</p><p><i class="fa fa-check text-primary me-3"></i>Une expérience simple à parcourir</p>
-        <a class="btn btn-primary rounded-pill py-3 px-5 mt-3" href="{{ route('front.about') }}">En savoir plus</a>
-    </div>
-</div></div></section>
-
-<section class="container-fluid bg-light bg-icon my-5 py-6"><div class="container"><div class="section-header text-center mx-auto mb-5 wow fadeInUp" style="max-width: 600px"><h2 class="display-5 mb-3">Les repères NutriTrace</h2><p>Une plateforme conçue pour vous aider à avancer avec clarté.</p></div>
-    <div class="row g-4">
-        <div class="col-lg-4 col-md-6 wow fadeInUp"><div class="bg-white text-center h-100 p-4 p-xl-5"><img class="img-fluid mb-4" src="{{ asset('themes/foody/img/icon-1.png') }}" alt=""><h3 class="h4 mb-3">Comprendre</h3><p class="mb-0">Retrouvez des informations utiles dans une interface claire et accessible.</p></div></div>
-        <div class="col-lg-4 col-md-6 wow fadeInUp"><div class="bg-white text-center h-100 p-4 p-xl-5"><img class="img-fluid mb-4" src="{{ asset('themes/foody/img/icon-2.png') }}" alt=""><h3 class="h4 mb-3">S’organiser</h3><p class="mb-0">Rassemblez les repères qui facilitent vos choix alimentaires au quotidien.</p></div></div>
-        <div class="col-lg-4 col-md-6 wow fadeInUp"><div class="bg-white text-center h-100 p-4 p-xl-5"><img class="img-fluid mb-4" src="{{ asset('themes/foody/img/icon-3.png') }}" alt=""><h3 class="h4 mb-3">Progresser</h3><p class="mb-0">Explorez une expérience pensée pour accompagner vos habitudes dans la durée.</p></div></div>
-    </div>
-</div></section>
+        @else
+            <p class="nt-products-empty" role="status">Aucun produit n&rsquo;est disponible pour le moment. Revenez bient&ocirc;t d&eacute;couvrir les produits publi&eacute;s.</p>
+        @endif
+    </section>
+    <section class="nt-section"><div class="nt-section-head"><span class="nt-eyebrow">Un parcours consultable</span><h2>Suivez les &eacute;tapes document&eacute;es</h2><p>Les informations de tra&ccedil;abilit&eacute; sont enregistr&eacute;es par les acteurs de la cha&icirc;ne alimentaire.</p></div><div class="nt-steps"><div class="nt-step"><i>01</i><b>Production</b><p>Exploitation et origine d&eacute;clar&eacute;es par le producteur.</p></div><div class="nt-step"><i>02</i><b>Transformation</b><p>Op&eacute;rations et lots li&eacute;s lorsqu&rsquo;ils sont renseign&eacute;s.</p></div><div class="nt-step"><i>03</i><b>Distribution</b><p>Mouvements et livraisons enregistr&eacute;s.</p></div><div class="nt-step"><i>04</i><b>Consultation publique</b><p>Catalogue, fiches produits et tra&ccedil;abilit&eacute; accessibles sans compte.</p></div></div></section></main>
 @endsection

@@ -46,4 +46,16 @@ return [
         'enabled' => filter_var(env('GOOGLE_RECAPTCHA_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
     ],
 
+    'gemini' => [
+        'api_key' => env('GEMINI_API_KEY'),
+        'model' => env('GEMINI_MODEL', 'gemini-2.5-flash'),
+        'document_analysis_enabled' => filter_var(env('GEMINI_DOCUMENT_ANALYSIS_ENABLED', false), FILTER_VALIDATE_BOOLEAN),
+    ],
+
+    'open_food_facts' => [
+        'user_agent' => env('OPEN_FOOD_FACTS_USER_AGENT', 'NutriTrace/1.0'),
+        'product_url' => env('OPEN_FOOD_FACTS_PRODUCT_URL', 'https://world.openfoodfacts.org/api/v3/product'),
+        'search_url' => env('OPEN_FOOD_FACTS_SEARCH_URL', 'https://search.openfoodfacts.org/search'),
+    ],
+
 ];

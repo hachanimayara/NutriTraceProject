@@ -55,5 +55,19 @@
     <script src="{{ asset('themes/foody/lib/owlcarousel/owl.carousel.min.js') }}"></script>
     <script src="{{ asset('themes/foody/js/main.js') }}"></script>
     @stack('scripts')
+<script>
+(() => {
+    document.querySelectorAll('form[data-list-filters]').forEach((form) => {
+        const search = form.querySelector('input[name="q"]');
+        const selects = form.querySelectorAll('select');
+        let timer;
+        if (search) search.addEventListener('input', () => {
+            clearTimeout(timer);
+            timer = setTimeout(() => form.requestSubmit(), 350);
+        });
+        selects.forEach((select) => select.addEventListener('change', () => { clearTimeout(timer); form.requestSubmit(); }));
+    });
+})();
+</script>
 </body>
 </html>

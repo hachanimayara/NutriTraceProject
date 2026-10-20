@@ -6,7 +6,7 @@
 <form id="login-form" method="post" action="{{ route('login.store') }}">@csrf
 <div class="field"><label for="email">Adresse e-mail</label><input id="email" name="email" type="email" value="{{ old('email') }}" autocomplete="email" required>@error('email')<div class="error">{{ $message }}</div>@enderror</div>
 <div class="field"><label for="password">Mot de passe</label><input id="password" name="password" type="password" autocomplete="current-password" required></div>
-<div class="links"><label><input type="checkbox" name="remember" value="1"> Se souvenir de moi</label><a class="back" href="{{ route('password.request') }}">Mot de passe oublié ?</a></div>
+<div class="links"><a class="back" href="{{ route('password.request') }}">Mot de passe oublié ?</a></div>
 <div class="captcha">@if(config('services.google_recaptcha.enabled') && config('services.google_recaptcha.site_key'))<div class="g-recaptcha" data-sitekey="{{ config('services.google_recaptcha.site_key') }}"></div>@else<div class="captcha-note">Ajoutez les clés reCAPTCHA v2 dans le fichier .env pour activer la connexion.</div>@endif @error('captcha')<div class="error">{{ $message }}</div>@enderror</div>
 <button class="btn" id="login-submit" type="submit">Se connecter</button></form>
 <script>
@@ -23,4 +23,5 @@ document.getElementById('login-form')?.addEventListener('submit', function () {
     <p class="small" style="margin:8px 0;text-align:center">Selon votre appareil, confirmez avec Face ID, Windows Hello, un code ou une clé d’accès. NutriTrace ne reçoit aucune donnée biométrique.</p>
     <div id="passkey-login-status" class="alert warn" role="status" aria-live="polite" hidden></div>
 </div>
+<p class="register-login">Pas encore de compte NutriTrace ? <a class="back" href="{{ route('register') }}">Créer un compte</a></p>
 @endsection

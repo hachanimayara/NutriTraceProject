@@ -15,7 +15,7 @@ class UserController extends Controller
     {
         $filters = $request->validate([
             'q' => ['nullable', 'string', 'max:120'],
-            'role' => ['nullable', 'in:producteur,transformateur,distributeur,consommateur,admin'],
+            'role' => ['nullable', 'in:producteur,transformateur,distributeur,admin'],
             'status' => ['nullable', 'in:pending,approved,suspended'],
         ]);
 
@@ -33,7 +33,7 @@ class UserController extends Controller
             'approved' => (int) $statusCounts->get('approved', 0),
             'suspended' => (int) $statusCounts->get('suspended', 0),
             'admin' => (int) $roleCounts->get('admin', 0),
-            'actors' => (int) $roleCounts->except('admin')->sum(),
+            'actors' => (int) $roleCounts->only(['producteur', 'transformateur', 'distributeur'])->sum(),
         ];
 
         return view('admin.users.index', compact('users', 'counts'));
@@ -50,7 +50,7 @@ class UserController extends Controller
     {
         $filters = $request->validate([
             'q' => ['nullable', 'string', 'max:120'],
-            'role' => ['nullable', 'in:producteur,transformateur,distributeur,consommateur,admin'],
+            'role' => ['nullable', 'in:producteur,transformateur,distributeur,admin'],
             'status' => ['nullable', 'in:pending,approved,suspended'],
         ]);
         $users = User::query()

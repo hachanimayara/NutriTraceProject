@@ -2,6 +2,7 @@
     class="sticky top-0 flex w-full bg-white border-gray-200 z-99999 dark:border-gray-800 dark:bg-gray-900 xl:border-b"
     x-data="{
         isApplicationMenuOpen: false,
+        isUserDropdownOpen: false,
         toggleApplicationMenu() {
             this.isApplicationMenuOpen = !this.isApplicationMenuOpen;
         }
@@ -66,7 +67,7 @@
             </button>
 
             <!-- Search Bar (desktop only) -->
-            <div class="hidden xl:block">
+            <div class="hidden">
                 <form>
                     <div class="relative">
                         <span class="absolute -translate-y-1/2 pointer-events-none ltr:left-4 rtl:right-4 top-1/2">
@@ -117,10 +118,22 @@
                     </svg>
                 </button>
 
-                <span class="hidden text-sm text-gray-500 sm:inline">Administration NutriTrace</span>
             </div>
 
-            <span class="flex h-10 w-10 items-center justify-center rounded-full bg-brand-50 font-semibold text-brand-600 dark:bg-brand-500/15 dark:text-brand-300" aria-label="NutriTrace">N</span>
+            <div class="relative" @click.outside="isUserDropdownOpen = false">
+                <button type="button" @click="isUserDropdownOpen = !isUserDropdownOpen" class="flex items-center gap-2 rounded-xl px-1.5 py-1 text-left hover:bg-gray-50 dark:hover:bg-white/5" aria-label="Ouvrir le menu du profil" :aria-expanded="isUserDropdownOpen">
+                    <span class="rounded-xl text-xs font-bold" style="display:flex;flex:0 0 36px;width:36px;min-width:36px;height:36px;align-items:center;justify-content:center;box-sizing:border-box;overflow:hidden;background-color:#2d6a4f;color:#fff;white-space:nowrap">{{ collect(preg_split('/\s+/u', trim(auth()->user()->name)))->take(2)->map(fn ($part) => mb_strtoupper(mb_substr($part, 0, 1)))->implode('') }}</span>
+                    <span class="min-w-0"><span class="block max-w-40 truncate text-xs font-semibold text-gray-800 dark:text-white">{{ auth()->user()->name }}</span><span class="block text-[10px] text-gray-500 dark:text-gray-400">{{ match (auth()->user()->role) { 'admin' => 'Administrateur', 'producteur' => 'Producteur', 'transformateur' => 'Transformateur', 'distributeur' => 'Distributeur', default => 'Utilisateur' } }}</span></span>
+                    <svg class="hidden h-4 w-4 shrink-0 text-gray-500 sm:block" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M5.22 7.47a.75.75 0 0 1 1.06 0L10 11.19l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 8.53a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd"/></svg>
+                </button>
+                <div x-cloak x-show="isUserDropdownOpen" x-transition class="absolute right-0 z-50 mt-2 rounded-xl border border-gray-200 bg-white p-2 shadow-lg dark:border-gray-800 dark:bg-gray-900" style="width:208px;min-width:208px">
+                    <a href="{{ route('profile.edit') }}" class="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/5">Profil</a>
+                    <form method="post" action="{{ route('logout') }}" data-confirm-logout>
+                        @csrf
+                        <button type="submit" class="w-full whitespace-nowrap rounded-lg px-3 py-2 text-left text-sm text-red-700 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-500/10" style="white-space:nowrap">Se déconnecter</button>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 </header>

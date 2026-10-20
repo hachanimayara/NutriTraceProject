@@ -15,11 +15,10 @@
                 'producteur' => ['Producteur', 'Exploitations et productions', 'tractor'],
                 'transformateur' => ['Transformateur', 'Opérations de transformation', 'factory'],
                 'distributeur' => ['Distributeur', 'Lots et mouvements', 'truck'],
-                'consommateur' => ['Consommateur', 'Explorer les produits', 'person'],
             ];
         @endphp
         @foreach($activities as $value => [$label, $description, $icon])
-            <label class="role">
+            <label class="role role-{{ $value }}">
                 <input type="radio" name="role" value="{{ $value }}" @checked(old('role', 'producteur') === $value) required>
                 <svg class="role-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     @if($icon === 'tractor')<path d="M3 17h13l2-5h3l1 5h-2M5 17v2m11-2v2M7 17l1-6h5l2 6M3 11h5M8 11V8h4l2 3"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="19" r="2"/>
@@ -49,4 +48,8 @@
 </form>
 <p class="muted register-login">Déjà inscrit ? <a class="back" href="{{ route('login') }}">Se connecter</a></p>
 <div class="alert">Les comptes administrateur sont attribués uniquement par NutriTrace.</div>
+<style>
+    .register-form .role-distributeur{grid-column:1 / -1;width:calc((100% - 9px) / 2);justify-self:center}
+    @media(max-width:560px){.register-form .role-distributeur{width:100%}}
+</style>
 @endsection

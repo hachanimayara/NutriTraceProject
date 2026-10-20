@@ -189,7 +189,7 @@ class AuthController extends Controller
 
     public function authenticate(Request $request)
     {
-        $credentials = $request->validate(['email' => ['required', 'email'], 'password' => ['required', 'string'], 'remember' => ['nullable', 'boolean']]);
+        $credentials = $request->validate(['email' => ['required', 'email'], 'password' => ['required', 'string']]);
         $email = mb_strtolower(trim($credentials['email']));
         $user = User::withTrashed()->where('email', $email)->first();
         if ($captchaError = $this->verifyGoogleRecaptcha($request)) {
@@ -210,7 +210,7 @@ class AuthController extends Controller
                 $user->forceFill(['password' => $credentials['password']])->save();
             }
 
-            Auth::login($user, $request->boolean('remember'));
+            Auth::login($user);
         }
         if (! $passwordMatches) {
             return back()->withErrors(['email' => 'Adresse e-mail ou mot de passe incorrect.'])->onlyInput('email');

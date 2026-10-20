@@ -242,7 +242,7 @@ class AccountManagementTest extends TestCase
     public function test_invalid_recaptcha_token_is_rejected_by_server(): void
     {
         $this->from('/register')->post(route('register.store'), [
-            'name' => 'Test Person', 'email' => 'captcha@example.test', 'phone' => '11223344', 'role' => 'consommateur',
+            'name' => 'Test Person', 'email' => 'captcha@example.test', 'phone' => '11223344', 'role' => 'producteur',
             'password' => 'SecurePass!1234', 'password_confirmation' => 'SecurePass!1234', 'terms' => '1', 'g-recaptcha-response' => 'bad-token',
         ])->assertSessionHasErrors('captcha');
         $this->assertDatabaseMissing('users', ['email' => 'captcha@example.test']);
@@ -251,7 +251,7 @@ class AccountManagementTest extends TestCase
     public function test_signup_without_recaptcha_token_is_rejected_without_calling_google(): void
     {
         $this->from('/register')->post(route('register.store'), [
-            'name' => 'Test Person', 'email' => 'missing-captcha@example.test', 'phone' => '11223344', 'role' => 'consommateur',
+            'name' => 'Test Person', 'email' => 'missing-captcha@example.test', 'phone' => '11223344', 'role' => 'producteur',
             'password' => 'SecurePass!1234', 'password_confirmation' => 'SecurePass!1234', 'terms' => '1',
         ])->assertSessionHasErrors('captcha');
 
@@ -284,7 +284,7 @@ class AccountManagementTest extends TestCase
         Log::spy();
         Http::fake(fn () => throw new ConnectionException('cURL error 7: Failed to connect to www.google.com port 443: Couldn\'t connect to server for https://www.google.com/recaptcha/api/siteverify?token=captcha-token-123&email=private@example.test'));
         $this->from('/register')->post(route('register.store'), [
-            'name' => 'Test Person', 'email' => 'network-captcha@example.test', 'phone' => '11223344', 'role' => 'consommateur',
+            'name' => 'Test Person', 'email' => 'network-captcha@example.test', 'phone' => '11223344', 'role' => 'producteur',
             'password' => 'SecurePass!1234', 'password_confirmation' => 'SecurePass!1234', 'terms' => '1', 'g-recaptcha-response' => 'captcha-token-123',
         ])->assertSessionHasErrors('captcha');
 

@@ -23,7 +23,9 @@
         "flatpickr": "^4.6.13",
         "fullcalendar": "^7.0.2",
         "jsvectormap": "^1.7.0",
+        "leaflet": "^1.9.4",
         "prismjs": "^1.30.0",
+        "qrcode": "^1.5.4",
         "swiper": "^14.2.0",
         "temporal-polyfill": "^1.0.4"
     }
