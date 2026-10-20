@@ -163,10 +163,6 @@ class TraceabilityController extends Controller
             return redirect()->route('workspace.resources.index', ['resource' => $resource, 'modal' => 'create']);
         }
 
-        if (auth()->user()->isAdmin() && in_array($resource, ['certifications', 'indicators'], true)) {
-            return redirect()->route('workspace.resources.index', ['resource' => $resource, 'modal' => 'create']);
-        }
-
         return view('traceability.form', ['resource' => $resource, 'config' => $config, 'record' => null, 'options' => $this->options($resource)]);
     }
 

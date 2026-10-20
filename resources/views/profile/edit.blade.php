@@ -13,7 +13,7 @@
 <main class="profile-page">
     <nav class="profile-crumb" aria-label="Fil d’Ariane"><a href="{{ route('dashboard') }}">Compte</a><span>›</span><span>Paramètres du profil</span></nav>
     <header class="profile-heading">
-        <div><h1>Paramètres du profil</h1><p>Gérez votre identité, vos accès biométriques et la sécurité de votre compte.</p></div>
+        <div><h1>Paramètres du profil</h1><p>Gérez votre identité, vos passkeys et la sécurité de votre compte.</p></div>
         @if($user->status === 'approved')<span class="profile-verified"><span>●</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 5 6v5c0 5 3 8 7 10 4-2 7-5 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4"/></svg>Compte vérifié</span>@endif
     </header>
 
@@ -26,7 +26,7 @@
             <p class="profile-nav-label">PARAMÈTRES DU COMPTE</p>
             <div class="profile-nav-items">
                 <button type="button" class="profile-tab active" data-profile-tab="personal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg><span><b>Informations personnelles</b><small>Identité, contact et photo</small></span><span class="profile-chevron">›</span></button>
-                <button type="button" class="profile-tab" data-profile-tab="face"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M8 3H5a2 2 0 0 0-2 2v3m13-5h3a2 2 0 0 1 2 2v3M3 16v3a2 2 0 0 0 2 2h3m13-5v3a2 2 0 0 1-2 2h-3"/><circle cx="9" cy="10" r="1"/><circle cx="15" cy="10" r="1"/><path d="M8 15c1 2 7 2 8 0"/></svg><span><b>Face ID</b><small>Connexion biométrique</small></span><span class="profile-chevron">›</span></button>
+                <button type="button" class="profile-tab" data-profile-tab="face"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M8 3H5a2 2 0 0 0-2 2v3m13-5h3a2 2 0 0 1 2 2v3M3 16v3a2 2 0 0 0 2 2h3m13-5v3a2 2 0 0 1-2 2h-3"/><circle cx="9" cy="10" r="1"/><circle cx="15" cy="10" r="1"/><path d="M8 15c1 2 7 2 8 0"/></svg><span><b>Face ID / Passkeys</b><small>Connexion biométrique</small></span><span class="profile-chevron">›</span></button>
                 <button type="button" class="profile-tab" data-profile-tab="password"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 1 1 8 0v3"/></svg><span><b>Mot de passe</b><small>Sécurité et accès</small></span><span class="profile-chevron">›</span></button>
             </div>
         </aside>
@@ -57,8 +57,17 @@
             </section>
 
             <section class="profile-section" data-profile-section="face" hidden>
-    @include('profile.partials.passkeys')
-</section>
+                <div class="profile-section-head">
+                    <span class="profile-section-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M8 3H5a2 2 0 0 0-2 2v3m13-5h3a2 2 0 0 1 2 2v3M3 16v3a2 2 0 0 0 2 2h3m13-5v3a2 2 0 0 1-2 2h-3"/><circle cx="9" cy="10" r="1"/><circle cx="15" cy="10" r="1"/><path d="M8 15c1 2 7 2 8 0"/></svg>
+                    </span>
+                    <div>
+                        <h2>Face ID & Passkeys</h2>
+                        <p>Configurez et gérez vos clés d'accès Passkeys pour une authentification biométrique sécurisée.</p>
+                    </div>
+                </div>
+                @include('profile.partials.passkeys')
+            </section>
         </div>
     </div>
 </main>
