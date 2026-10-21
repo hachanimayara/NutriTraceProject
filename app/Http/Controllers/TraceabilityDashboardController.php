@@ -7,8 +7,10 @@ use App\Models\AdminAuditLog;
 use App\Models\Distribution;
 use App\Models\EnvironmentalIndicator;
 use App\Models\Farm;
+use App\Models\HarvestPlan;
 use App\Models\Lot;
 use App\Models\Product;
+use App\Models\ProductRating;
 use App\Models\Store;
 use App\Models\TraceabilityAlert;
 use App\Models\Transformation;
@@ -30,23 +32,40 @@ class TraceabilityDashboardController extends Controller
         $chart = $this->chartFor($user, $role);
         $alerts = $this->alertsFor($user, $role);
         $sections = $this->recentSections($user, $role);
+        $adminRecentRatings = $role === 'admin'
+            ? ProductRating::query()->with(['consumer:id,name', 'product:id,name'])->latest()->limit(5)->get()
+            : collect();
         $categories = $role === 'producteur'
             ? Product::where('user_id', $user->id)->select('category', DB::raw('COUNT(*) as total'))->groupBy('category')->orderByDesc('total')->limit(6)->get()
             : collect();
+        $harvestSummary = null;
+        if ($role === 'producteur') {
+            $harvests = HarvestPlan::where('user_id', $user->id);
+            $harvestSummary = [
+                'planned' => (clone $harvests)->where('status', 'planned')->whereDate('ends_at', '>=', today())->count(),
+                'today' => (clone $harvests)->whereIn('status', ['planned', 'in_progress'])->whereDate('starts_at', '<=', today())->whereDate('ends_at', '>=', today())->count(),
+                'week' => (clone $harvests)->whereIn('status', ['planned', 'in_progress'])->whereDate('starts_at', '<=', today()->endOfWeek())->whereDate('ends_at', '>=', today()->startOfWeek())->count(),
+                'in_progress' => (clone $harvests)->where('status', 'in_progress')->count(),
+                'completed' => (clone $harvests)->where('status', 'completed')->count(),
+                'overdue' => (clone $harvests)->whereIn('status', ['planned', 'in_progress'])->whereDate('ends_at', '<', today())->count(),
+                'quantity' => (clone $harvests)->whereIn('status', ['planned', 'in_progress'])->whereDate('ends_at', '>=', today())->sum('estimated_quantity'),
+                'upcoming' => (clone $harvests)->with(['farm:id,name', 'product:id,name'])->whereIn('status', ['planned', 'in_progress'])->whereDate('ends_at', '>=', today())->orderBy('starts_at')->limit(5)->get(),
+            ];
+        }
         $quickLinks = collect(\App\Helpers\MenuHelper::getMenuGroups()[0]['items'])
             ->reject(fn ($item) => in_array($item['path'], ['/', '/notifications', '/profile', $user->getDashboardUrl()], true))
             ->values();
         $primary = match ($role) {
-            'admin' => ['label' => 'Ouvrir les alertes', 'url' => route('admin.alerts.index')],
-            'producteur' => ['label' => 'Nouveau produit', 'url' => route('workspace.resources.create', 'products')],
-            'transformateur' => ['label' => 'Nouvelle transformation', 'url' => route('workspace.resources.create', 'transformations')],
-            default => ['label' => 'Nouvelle distribution', 'url' => route('workspace.resources.create', 'distributions')],
+            'admin' => ['label' => 'Ouvrir la conformité', 'url' => route('admin.compliance.dashboard')],
+            'producteur' => ['label' => 'Consulter les produits', 'url' => route('workspace.resources.index', 'products')],
+            'transformateur' => ['label' => 'Consulter les transformations', 'url' => route('workspace.resources.index', 'transformations')],
+            default => ['label' => 'Consulter les distributions', 'url' => route('workspace.resources.index', 'distributions')],
         };
         $secondary = match ($role) {
             'admin' => ['label' => 'G&eacute;rer les utilisateurs', 'url' => route('admin.users.index')],
-            'producteur' => ['label' => 'Nouvelle exploitation', 'url' => route('workspace.resources.create', 'farms')],
-            'transformateur' => ['label' => 'G&eacute;rer les lots', 'url' => route('workspace.resources.index', 'lots')],
-            default => ['label' => 'Nouveau point de vente', 'url' => route('workspace.resources.create', 'stores')],
+            'producteur' => ['label' => 'Consulter les exploitations', 'url' => route('workspace.resources.index', 'farms')],
+            'transformateur' => ['label' => 'Consulter les lots', 'url' => route('workspace.resources.index', 'lots')],
+            default => ['label' => 'Consulter les points de vente', 'url' => route('workspace.resources.index', 'stores')],
         };
         $exportUrl = match ($role) {
             'admin' => route('admin.users.export'),
@@ -55,34 +74,27 @@ class TraceabilityDashboardController extends Controller
             default => route('workspace.resources.export', 'distributions'),
         };
         $alertsUrl = match ($role) {
-            'admin' => route('admin.alerts.index'),
+            'admin' => route('admin.compliance.dashboard'),
             'producteur' => '/workspace/certifications',
             'transformateur' => '/workspace/transformations',
             default => '/workspace/distributions',
         };
 
-        return view('dashboard.role', compact('role', 'stats', 'chart', 'alerts', 'sections', 'categories', 'quickLinks', 'primary', 'secondary', 'exportUrl', 'alertsUrl'));
+        return view('dashboard.role', compact('role', 'stats', 'chart', 'alerts', 'sections', 'categories', 'quickLinks', 'primary', 'secondary', 'exportUrl', 'alertsUrl', 'harvestSummary', 'adminRecentRatings'));
     }
 
     private function statsFor(User $user, string $role): array
     {
         if ($role === 'admin') {
             $activeCertifications = Certification::where('status', 'valid')->where(fn ($q) => $q->whereNull('expires_at')->orWhereDate('expires_at', '>=', today()))->count();
-            $expiredCertifications = Certification::where(fn ($q) => $q->where('status', 'expired')->orWhere(fn ($valid) => $valid->where('status', 'valid')->whereDate('expires_at', '<', today())))->count();
 
             return [
                 $this->stat('Utilisateurs', User::count(), '/admin/users', 'Tous les comptes', 'mint'),
-                $this->stat('Producteurs', User::where('role', 'producteur')->count(), '/admin/users?role=producteur', 'Comptes producteurs', 'blue'),
-                $this->stat('Transformateurs', User::where('role', 'transformateur')->count(), '/admin/users?role=transformateur', 'Comptes transformateurs', 'violet'),
-                $this->stat('Distributeurs', User::where('role', 'distributeur')->count(), '/admin/users?role=distributeur', 'Comptes distributeurs', 'amber'),
                 $this->stat('Produits', Product::count(), '/workspace/products', 'Tous statuts confondus', 'mint'),
+                $this->stat('Avis consommateurs', ProductRating::published()->count(), '/admin/product-ratings', 'Avis publiés à consulter', 'amber'),
                 $this->stat('Lots', Lot::count(), '/workspace/lots', 'Lots enregistr&eacute;s', 'blue'),
-                $this->stat('Transformations', Transformation::count(), '/workspace/transformations', 'Op&eacute;rations enregistr&eacute;es', 'violet'),
-                $this->stat('Distributions', Distribution::count(), '/workspace/distributions', 'Mouvements enregistr&eacute;s', 'amber'),
                 $this->stat('Certifications actives', $activeCertifications, '/workspace/certifications?status=valid', 'Validit&eacute; en cours', 'mint'),
-                $this->stat('Certifications expir&eacute;es', $expiredCertifications, '/workspace/certifications?status=expired', 'Renouvellement &agrave; suivre', 'amber'),
                 $this->stat('Indicateurs environnementaux', EnvironmentalIndicator::count(), '/workspace/indicators', 'Mesures disponibles', 'blue'),
-                $this->stat('M&eacute;thodes document&eacute;es', EnvironmentalIndicator::whereNotNull('method')->where('method', '!=', '')->count(), '/workspace/indicators', 'Mesures avec source m&eacute;thodologique', 'violet'),
             ];
         }
 
@@ -92,7 +104,6 @@ class TraceabilityDashboardController extends Controller
             return [
                 $this->stat('Exploitations', Farm::where('user_id', $user->id)->count(), '/workspace/farms', 'Vos sites de production', 'mint'),
                 $this->stat('Produits', (clone $products)->count(), '/workspace/products', 'Votre catalogue', 'blue'),
-                $this->stat('Produits publi&eacute;s', (clone $products)->where('status', 'published')->count(), '/workspace/products?status=published', 'Visibles au catalogue', 'violet'),
                 $this->stat('Produits en brouillon', (clone $products)->where('status', 'draft')->count(), '/workspace/products?status=draft', 'Non publi&eacute;s', 'amber'),
                 $this->stat('Certifications actives', (clone $certificates)->where('status', 'valid')->where(fn ($q) => $q->whereNull('expires_at')->orWhereDate('expires_at', '>=', today()))->count(), '/workspace/certifications?status=valid', 'Associ&eacute;es &agrave; vos produits', 'mint'),
                 $this->stat('Certifications &agrave; suivre', (clone $certificates)->where(fn ($q) => $q->whereIn('status', ['pending', 'expired'])->orWhere(fn ($valid) => $valid->where('status', 'valid')->whereNotNull('expires_at')->whereDate('expires_at', '<=', today()->addDays(30))))->count(), '/workspace/certifications', 'En attente ou bient&ocirc;t expir&eacute;es', 'amber'),
@@ -107,7 +118,6 @@ class TraceabilityDashboardController extends Controller
                 $this->stat('Transformations', (clone $transformations)->count(), '/workspace/transformations', 'Op&eacute;rations enregistr&eacute;es', 'mint'),
                 $this->stat('Lots g&eacute;r&eacute;s', (clone $lots)->count(), '/workspace/lots', 'Reli&eacute;s &agrave; vos transformations', 'blue'),
                 $this->stat('Lots actifs', (clone $lots)->where('status', 'active')->count(), '/workspace/lots?status=active', 'En cours de suivi', 'violet'),
-                $this->stat('Lots termin&eacute;s', (clone $lots)->where('status', 'completed')->count(), '/workspace/lots?status=completed', 'Statut termin&eacute;', 'mint'),
                 $this->stat('Lots bloqu&eacute;s', (clone $lots)->where('status', 'blocked')->count(), '/workspace/lots?status=blocked', 'N&eacute;cessitent une action', 'amber'),
                 $this->stat('Transformations &agrave; v&eacute;rifier', (clone $transformations)->where('status', 'review')->count(), '/workspace/transformations?status=review', 'Statut de contr&ocirc;le', 'amber'),
                 $this->stat('Indicateurs saisis', $this->ownedIndicators($user)->count(), '/workspace/indicators', 'Mesures environnementales', 'blue'),
@@ -120,7 +130,6 @@ class TraceabilityDashboardController extends Controller
             $this->stat('Livraisons planifi&eacute;es', (clone $distributions)->where('status', 'planned')->count(), '/workspace/distributions?status=planned', '&Agrave; exp&eacute;dier', 'blue'),
             $this->stat('Livraisons en transit', (clone $distributions)->where('status', 'in_transit')->count(), '/workspace/distributions?status=in_transit', 'En cours de transport', 'violet'),
             $this->stat('Livraisons en retard', (clone $distributions)->where('status', 'delayed')->count(), '/workspace/distributions?status=delayed', 'Suivi requis', 'amber'),
-            $this->stat('Livraisons re&ccedil;ues', (clone $distributions)->where('status', 'delivered')->count(), '/workspace/distributions?status=delivered', 'R&eacute;ceptions enregistr&eacute;es', 'mint'),
             $this->stat('Points de vente', Store::where('user_id', $user->id)->count(), '/workspace/stores', 'Vos sites de r&eacute;ception', 'blue'),
             $this->stat('Lots distribu&eacute;s', Lot::whereIn('id', (clone $distributions)->select('lot_id'))->distinct()->count(), '/workspace/lots', 'Li&eacute;s &agrave; vos mouvements', 'violet'),
         ];
@@ -186,6 +195,10 @@ class TraceabilityDashboardController extends Controller
 
     private function recentSections(User $user, string $role): array
     {
+        if ($role === 'admin') {
+            return [];
+        }
+
         if ($role === 'producteur') {
             return [
                 $this->section('Exploitations r&eacute;cemment ajout&eacute;es', '/workspace/farms', Farm::where('user_id', $user->id)->latest()->limit(4)->get()->map(fn (Farm $farm) => $this->row($farm->name, trim($farm->location.', '.$farm->country, ', '), 'Cr&eacute;&eacute;e le '.$farm->created_at?->format('d/m/Y'), '/workspace/farms'))->all()),
@@ -223,6 +236,7 @@ class TraceabilityDashboardController extends Controller
         $this->appendActivities($activities, Distribution::query()->with(['owner', 'lot.product'])->latest()->limit(5)->get(), 'Distribution', fn ($item) => $item->reference, fn ($item) => ($item->owner?->name ?: 'Utilisateur').' &middot; '.($item->lot?->product?->name ?: 'Produit'), '/workspace/distributions');
         $this->appendActivities($activities, Certification::query()->with('creator')->latest()->limit(5)->get(), 'Certification', fn ($item) => $item->title, fn ($item) => ($item->creator?->name ?: 'Utilisateur').' &middot; '.ucfirst($item->status), '/workspace/certifications');
         $this->appendActivities($activities, EnvironmentalIndicator::query()->with('recorder')->latest()->limit(5)->get(), 'Indicateur', fn ($item) => $item->name, fn ($item) => ($item->recorder?->name ?: 'Utilisateur').' &middot; '.$item->value.' '.$item->unit, '/workspace/indicators');
+        $this->appendActivities($activities, \App\Models\ProductRating::query()->with(['consumer:id,name', 'product:id,name'])->latest()->limit(5)->get(), 'Avis consommateur', fn ($item) => ($item->product?->name ?: 'Produit').' · '.$item->rating.'/5', fn ($item) => ($item->consumer?->name ?: ($item->consumer_name ?: 'Visiteur')).($item->comment ? ' · '.mb_strimwidth($item->comment, 0, 90, '…') : ' · Sans commentaire').' · '.($item->status === 'published' ? 'Publié' : 'Masqué'), '/admin/product-ratings');
         AdminAuditLog::latest()->limit(5)->get()->each(function (AdminAuditLog $log) use ($activities) {
             $admin = User::find($log->admin_id);
             $actions = ['user.approved' => 'Compte approuv&eacute;', 'user.activated' => 'Compte r&eacute;activ&eacute;', 'user.suspended' => 'Compte suspendu', 'user.deleted' => 'Compte supprim&eacute;'];
@@ -252,7 +266,7 @@ class TraceabilityDashboardController extends Controller
 
     private function alertsFor(User $user, string $role): array
     {
-        $query = TraceabilityAlert::where('status', 'open')->latest();
+        $query = TraceabilityAlert::whereNotIn('status', ['resolved', 'dismissed'])->latest();
         if ($role !== 'admin') {
             $subjects = match ($role) {
                 'producteur' => [
@@ -281,7 +295,7 @@ class TraceabilityDashboardController extends Controller
             'title' => $alert->title,
             'detail' => $alert->explanation,
             'severity' => $alert->severity,
-            'url' => $role === 'admin' ? route('admin.alerts.index') : $this->alertUrl($alert->subject_type),
+            'url' => $role === 'admin' ? route('admin.compliance.alerts.show', $alert->id) : $this->alertUrl($alert->subject_type),
         ])->all();
 
         $extra = collect();

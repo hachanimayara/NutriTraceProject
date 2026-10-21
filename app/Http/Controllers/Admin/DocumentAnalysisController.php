@@ -21,7 +21,7 @@ class DocumentAnalysisController extends Controller
         $analyses = DocumentAnalysis::with('uploader')
             ->when($filters['q'] ?? null, fn ($query, $term) => $query->where('original_filename', 'like', '%'.trim($term).'%'))
             ->when($filters['status'] ?? null, fn ($query, $status) => $query->where('status', $status))
-            ->latest()->paginate(15)->withQueryString();
+            ->latest()->paginate(5)->withQueryString();
 
         return view('admin.document-analyses.index', ['analyses' => $analyses, 'apiReady' => (bool) config('services.gemini.document_analysis_enabled') && (bool) config('services.gemini.api_key')]);
     }

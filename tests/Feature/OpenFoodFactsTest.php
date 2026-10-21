@@ -97,4 +97,5 @@ class OpenFoodFactsTest extends TestCase
         $producer = User::factory()->create(['role' => 'producteur', 'status' => 'approved']);
         $this->actingAs($producer)->get(route('workspace.open-food-facts.index'))->assertForbidden();
     }
+
 }

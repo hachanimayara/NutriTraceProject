@@ -24,7 +24,7 @@ class ProducerQrCodeController extends Controller
             ->when($filters['status'] ?? null, fn ($query, string $status) => $query->where('status', $status))
             ->when($filters['category'] ?? null, fn ($query, string $category) => $query->where('category', $category))
             ->latest()
-            ->paginate(10)
+            ->paginate(5)
             ->withQueryString();
 
         $categories = Product::query()->where('user_id', $request->user()->id)

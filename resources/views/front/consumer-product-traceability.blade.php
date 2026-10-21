@@ -10,6 +10,8 @@
 @media(max-width:950px){.consumer-trace .ct-layout{grid-template-columns:1fr}.consumer-trace .ct-side{grid-template-columns:1fr 1fr}.consumer-trace .ct-hero{grid-template-columns:1fr 1.1fr}}@media(max-width:700px){.consumer-trace .ct-hero{grid-template-columns:1fr}.consumer-trace .ct-photo{min-height:280px}.consumer-trace .ct-layout,.consumer-trace .ct-subsections,.consumer-trace .ct-side{grid-template-columns:1fr}.consumer-trace .ct-timeline-card,.consumer-trace .ct-side-card{padding:20px}.consumer-trace .ct-event{grid-template-columns:40px 1fr;gap:8px 12px}.consumer-trace .ct-date{grid-column:2;padding-top:3px}.consumer-trace .ct-event-copy{grid-column:2}.consumer-trace .ct-card-heading{align-items:flex-start;flex-direction:column}}
 .consumer-trace{max-width:1500px;margin-inline:auto;padding-inline:24px;box-sizing:border-box}
 @media(max-width:600px){.consumer-trace{padding-inline:16px}}
+.consumer-trace .ct-rating-card{padding:26px;margin-top:22px}.consumer-trace .ct-rating-summary{display:flex;align-items:center;gap:12px;margin:18px 0}.consumer-trace .ct-rating-average{font-size:30px;font-weight:750;color:#1e3027}.consumer-trace .ct-rating-stars{color:#d99a20;letter-spacing:2px}.consumer-trace .ct-rating-distribution{max-width:520px;display:grid;gap:7px;margin:18px 0 24px}.consumer-trace .ct-rating-row{display:grid;grid-template-columns:42px minmax(80px,1fr) 32px;align-items:center;gap:10px;font-size:13px;color:#718078}.consumer-trace .ct-rating-track{height:8px;border-radius:99px;background:#edf1ed;overflow:hidden}.consumer-trace .ct-rating-track span{height:100%;display:block;background:#d99a20}.consumer-trace .ct-rating-form{border-top:1px solid #edf0ed;padding-top:20px;margin-top:20px;max-width:650px}.consumer-trace .ct-rating-form label{display:block;font-size:14px;font-weight:650;color:#34463b;margin-bottom:8px}.consumer-trace .ct-rating-picker{display:flex;flex-direction:row-reverse;justify-content:flex-end;gap:4px;margin:4px 0 16px}.consumer-trace .ct-rating-picker label{margin:0;cursor:pointer;color:#cbd3cd;font-size:28px;line-height:1}.consumer-trace .ct-rating-picker input{position:absolute;opacity:0;width:1px;height:1px}.consumer-trace .ct-rating-picker label:has(input:checked),.consumer-trace .ct-rating-picker label:has(input:checked)~label{color:#d99a20}.consumer-trace .ct-rating-picker label:focus-within{outline:2px solid #2d6a4f;outline-offset:3px;border-radius:3px}.consumer-trace .ct-rating-form textarea{width:100%;min-height:100px;padding:12px;border:1px solid #dfe7e2;border-radius:10px;resize:vertical}.consumer-trace .ct-rating-list{display:grid;gap:14px;margin-top:24px}.consumer-trace .ct-rating-item{padding:16px;border:1px solid #edf0ed;border-radius:12px}.consumer-trace .ct-rating-item header{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}.consumer-trace .ct-rating-item p{margin:10px 0 0;color:#52635a;white-space:pre-line}.consumer-trace .ct-rating-note{padding:12px;border-radius:10px;background:#fff4df;color:#80580e;font-size:13px}
+@media(max-width:600px){.consumer-trace .ct-rating-card{padding:20px}.consumer-trace .ct-rating-summary{flex-wrap:wrap}}
 </style>
 <style>
 .consumer-trace .ct-actions{display:flex;flex-wrap:wrap;gap:10px}
@@ -37,6 +39,72 @@
             <section class="ct-card ct-side-card"><h2>État des informations</h2><p>{{ $informationCount }} information(s) renseignée(s) sur {{ count($completenessItems) }}.</p><ul class="ct-info-list">@foreach($completenessItems as $label=>$present)<li><span class="ct-dot {{ $present?'':'missing' }}"></span><span>{{ $label }} · {{ $present?'renseigné':'manquant' }}</span></li>@endforeach</ul></section>
         </aside>
     </div>
+    <section id="avis-consommateurs" class="ct-card ct-rating-card">
+        <div class="ct-card-heading"><div><span class="ct-overline">Avis consommateurs</span><h2 class="ct-section-title text-lg font-semibold">Évaluations du produit</h2></div></div>
+        @if($ratingCount > 0)
+            <div class="ct-rating-summary"><strong class="ct-rating-average">{{ number_format((float) $averageRating, 1, ',', ' ') }}/5</strong><span class="ct-rating-stars" aria-label="Note moyenne {{ number_format((float) $averageRating, 1, ',', ' ') }} sur 5">{{ str_repeat('★', (int) round((float) $averageRating)) }}{{ str_repeat('☆', 5 - (int) round((float) $averageRating)) }}</span><span>{{ $ratingCount }} avis publié(s)</span></div>
+            <div class="ct-rating-distribution" aria-label="Répartition des notes">
+                @foreach([5, 4, 3, 2, 1] as $score)
+                    @php($scoreCount = (int) ($ratingDistribution[$score] ?? 0))
+                    <div class="ct-rating-row"><span>{{ $score }} étoile(s)</span><div class="ct-rating-track"><span style="width:{{ $ratingCount ? ($scoreCount / $ratingCount * 100) : 0 }}%"></span></div><span>{{ $scoreCount }}</span></div>
+                @endforeach
+            </div>
+        @else
+            <p class="ct-empty mt-5">Aucune évaluation pour le moment.</p>
+        @endif
+
+        @if($ownRating)
+            <p class="ct-rating-note mt-4" role="status">{{ session('status') ?: 'Merci pour votre avis. Il a bien été enregistré et ne peut plus être modifié.' }}@if($ownRating->status === 'hidden') Il est actuellement masqué par l’administration.@endif</p>
+        @elseif(auth()->check() && auth()->user()->role === 'consommateur')
+            @if(session('status'))<p class="ct-rating-note" role="status">{{ session('status') }}</p>@endif
+            <form class="ct-rating-form" method="post" action="{{ route('consumer.product-ratings.store', $product->id) }}">
+                @csrf
+                <label>Votre note <span aria-hidden="true">*</span></label>
+                <div class="ct-rating-picker" role="radiogroup" aria-label="Choisissez une note de 1 à 5">
+                    @for($star = 5; $star >= 1; $star--)
+                        <label for="product-rating-{{ $star }}"><input id="product-rating-{{ $star }}" type="radio" name="rating" value="{{ $star }}" @checked((int) old('rating', $ownRating?->rating) === $star) required><span aria-hidden="true">★</span><span class="sr-only">{{ $star }} étoile(s)</span></label>
+                    @endfor
+                </div>
+                @error('rating')<p class="text-sm text-red-700" role="alert">{{ $message }}</p>@enderror
+                <label for="product-rating-comment">Commentaire facultatif</label>
+                <textarea id="product-rating-comment" name="comment" maxlength="1000">{{ old('comment', $ownRating?->comment) }}</textarea>
+                @error('comment')<p class="text-sm text-red-700" role="alert">{{ $message }}</p>@enderror
+                <button class="ct-btn mt-4" type="submit">Envoyer mon avis</button>
+            </form>
+        @elseif(!auth()->check())
+            @if(session('status'))<p class="ct-rating-note" role="status">{{ session('status') }}</p>@endif
+            <form class="ct-rating-form" method="post" action="{{ route('consumer.product-ratings.store', $product->id) }}">
+                @csrf
+                <label>Votre note <span aria-hidden="true">*</span></label>
+                <div class="ct-rating-picker" role="radiogroup" aria-label="Choisissez une note de 1 à 5">
+                    @for($star = 5; $star >= 1; $star--)
+                        <label for="guest-product-rating-{{ $star }}"><input id="guest-product-rating-{{ $star }}" type="radio" name="rating" value="{{ $star }}" @checked((int) old('rating', $ownRating?->rating) === $star) required><span aria-hidden="true">★</span><span class="sr-only">{{ $star }} étoile(s)</span></label>
+                    @endfor
+                </div>
+                @error('rating')<p class="text-sm text-red-700" role="alert">{{ $message }}</p>@enderror
+                <label for="guest-rating-name">Votre nom (facultatif)</label>
+                <input id="guest-rating-name" class="mb-4 w-full rounded-lg border border-gray-300 p-3" name="name" maxlength="80" value="{{ old('name', $ownRating?->consumer_name) }}" autocomplete="name">
+                @error('name')<p class="text-sm text-red-700" role="alert">{{ $message }}</p>@enderror
+                <label for="guest-rating-comment">Commentaire facultatif</label>
+                <textarea id="guest-rating-comment" name="comment" maxlength="1000">{{ old('comment', $ownRating?->comment) }}</textarea>
+                @error('comment')<p class="text-sm text-red-700" role="alert">{{ $message }}</p>@enderror
+                <div aria-hidden="true" style="position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden"><label for="rating-website">Ne pas remplir</label><input id="rating-website" name="website" tabindex="-1" autocomplete="off"></div>
+                <p class="mt-2 text-xs text-gray-500">Aucun compte n’est nécessaire. Les avis sont visibles sur la fiche produit et peuvent être modérés par l’administration.</p>
+                <button class="ct-btn mt-4" type="submit">Envoyer mon avis</button>
+            </form>
+        @else
+            <p class="mt-5 text-sm text-gray-600">La notation est réservée aux comptes consommateurs.</p>
+        @endif
+
+        @if($ratings->isNotEmpty())
+            <div class="ct-rating-list">
+                @foreach($ratings as $rating)
+                    <article class="ct-rating-item"><header><span class="ct-rating-stars" aria-label="{{ $rating->rating }} sur 5">{{ str_repeat('★', $rating->rating) }}{{ str_repeat('☆', 5 - $rating->rating) }}</span><time>{{ $rating->created_at?->format('d/m/Y') }}</time></header>@if($rating->comment)<p>{{ $rating->comment }}</p>@endif</article>
+                @endforeach
+            </div>
+            <div class="mt-5">{{ $ratings->links() }}</div>
+        @endif
+    </section>
     <div class="ct-subsections">
         <section class="ct-card ct-record"><span class="ct-overline">Certifications</span><h2>Documents associés</h2>@forelse($product->certifications as $certification)<div class="ct-record-item"><strong>{{ $certification->title }}</strong><p>{{ $certification->scheme }} · {{ $certification->issuer }}</p><p>Certificat {{ $certification->certificate_number }}@if($certification->expires_at) · expire le {{ $certification->expires_at->format('d/m/Y') }}@endif</p></div>@empty<div class="ct-empty">Aucune certification valide n’est associée à ce produit.</div>@endforelse</section>
         <section class="ct-card ct-record"><span class="ct-overline">Impact environnemental</span><h2>Indicateurs disponibles</h2>@forelse($product->indicators as $indicator)<div class="ct-record-item"><strong>{{ number_format((float)$indicator->value,3,',',' ') }} {{ $indicator->unit }} · {{ $indicator->name }}</strong><p>{{ $indicator->stage }}@if($indicator->measured_at) · mesuré le {{ $indicator->measured_at->format('d/m/Y') }}@endif</p><p>{{ $indicator->method ?: 'Méthode non renseignée' }}@if($indicator->source_notes) · {{ $indicator->source_notes }}@endif</p></div>@empty<div class="ct-empty">Aucun indicateur environnemental n’est associé à ce produit.</div>@endforelse</section>

@@ -25,6 +25,18 @@ class NewUserRegistration extends Notification
 
     public function toArray(object $notifiable): array
     {
-        return ['message' => 'Nouvelle demande de compte', 'user_id' => $this->newUser->id, 'name' => $this->newUser->name, 'email' => $this->newUser->email, 'role' => $this->newUser->role];
+        return [
+            'message' => 'Nouvelle demande de compte : '.$this->newUser->name,
+            'preview' => $this->newUser->email.' · '.match ($this->newUser->role) {
+                'producteur' => 'Producteur',
+                'transformateur' => 'Transformateur',
+                'distributeur' => 'Distributeur',
+                default => ucfirst($this->newUser->role),
+            },
+            'user_id' => $this->newUser->id,
+            'name' => $this->newUser->name,
+            'email' => $this->newUser->email,
+            'role' => $this->newUser->role,
+        ];
     }
 }

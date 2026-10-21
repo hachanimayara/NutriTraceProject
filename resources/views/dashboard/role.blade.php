@@ -26,7 +26,7 @@
     @media(min-width:768px){.role-dashboard{margin:-1.5rem;padding:30px}}
     .dash-head{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:24px}.dash-title{margin:0;color:#172a23;font-size:30px;font-weight:700;letter-spacing:-.035em;line-height:1.2}.dash-subtitle{margin:8px 0 0;color:#76817a;font-size:14px}
     .dash-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.dash-button{display:inline-flex;min-height:46px;align-items:center;justify-content:center;gap:8px;padding:0 15px;border:1px solid var(--dash-line);border-radius:12px;background:#fff;color:#24362e;font-size:13px;font-weight:700;text-decoration:none;transition:transform .18s,box-shadow .18s}.dash-button:hover{transform:translateY(-1px);box-shadow:0 8px 20px #183b2910}.dash-button svg{width:17px;height:17px}.dash-button-primary{border-color:#28684d;background:#28684d;color:#fff;box-shadow:0 8px 18px #28684d20}
-    .dash-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(205px,1fr));gap:14px}.dash-stat{display:flex;min-height:94px;align-items:center;gap:13px;padding:15px;border:1px solid var(--dash-line);border-radius:15px;background:#fff;box-shadow:0 3px 10px #152f2410;text-decoration:none;transition:transform .18s,box-shadow .18s}.dash-stat:hover{transform:translateY(-2px);box-shadow:0 10px 22px #183b2912}.dash-icon{display:grid;width:46px;height:46px;flex:0 0 46px;place-items:center;border-radius:13px}.dash-icon svg{width:23px;height:23px;stroke:currentColor}.dash-tone-mint .dash-icon{background:#e8f5ed;color:#367b58}.dash-tone-blue .dash-icon{background:#eaf4f8;color:#428398}.dash-tone-violet .dash-icon{background:#f2edfa;color:#785aa0}.dash-tone-amber .dash-icon{background:#fff6e6;color:#c28a27}.dash-stat-copy{min-width:0;flex:1}.dash-stat-label{display:block;overflow:hidden;color:#79827d;font-size:11px;text-overflow:ellipsis;white-space:nowrap}.dash-stat-value{display:block;margin-top:4px;color:#1c2b25;font-size:24px;font-weight:750;letter-spacing:-.03em;line-height:1.1}.dash-stat-hint{display:block;margin-top:5px;color:#829087;font-size:10px;text-align:right}
+    .dash-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(205px,1fr));gap:14px}.producer-stats{grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}.dash-stat{display:flex;min-height:94px;align-items:center;gap:13px;padding:15px;border:1px solid var(--dash-line);border-radius:15px;background:#fff;box-shadow:0 3px 10px #152f2410;text-decoration:none;transition:transform .18s,box-shadow .18s}.producer-stats .dash-stat{min-height:118px;padding:20px;gap:16px}.dash-stat:hover{transform:translateY(-2px);box-shadow:0 10px 22px #183b2912}.dash-icon{display:grid;width:46px;height:46px;flex:0 0 46px;place-items:center;border-radius:13px}.producer-stats .dash-icon{width:54px;height:54px;flex-basis:54px;border-radius:15px}.dash-icon svg{width:23px;height:23px;stroke:currentColor}.producer-stats .dash-icon svg{width:27px;height:27px}.dash-tone-mint .dash-icon{background:#e8f5ed;color:#367b58}.dash-tone-blue .dash-icon{background:#eaf4f8;color:#428398}.dash-tone-violet .dash-icon{background:#f2edfa;color:#785aa0}.dash-tone-amber .dash-icon{background:#fff6e6;color:#c28a27}.dash-stat-copy{min-width:0;flex:1}.dash-stat-label{display:block;overflow:hidden;color:#79827d;font-size:11px;text-overflow:ellipsis;white-space:nowrap}.producer-stats .dash-stat-label{font-size:13px}.dash-stat-value{display:block;margin-top:4px;color:#1c2b25;font-size:24px;font-weight:750;letter-spacing:-.03em;line-height:1.1}.producer-stats .dash-stat-value{font-size:28px}.dash-stat-hint{display:block;margin-top:5px;color:#829087;font-size:10px;text-align:right}
     .dash-panels{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(300px,1fr);gap:17px;margin-top:19px}.dash-panel{overflow:hidden;border:1px solid var(--dash-line);border-radius:17px;background:#fff;box-shadow:0 3px 12px #152f2409}.dash-panel-head{display:flex;min-height:82px;align-items:center;justify-content:space-between;gap:13px;padding:18px 21px;border-bottom:1px solid var(--dash-line)}.dash-panel-title{margin:0;color:#25352e;font-size:16px;font-weight:700}.dash-panel-caption{margin:5px 0 0;color:#87918b;font-size:11px}.dash-panel-head .dash-period{padding:9px 11px;border:1px solid var(--dash-line);border-radius:10px;background:white;color:#39483f;font-size:12px;white-space:nowrap}
     .dash-chart{padding:13px 17px 8px}.dash-chart svg{display:block;width:100%;height:245px;overflow:visible}.dash-chart-grid{stroke:#edf1ee;stroke-width:1}.dash-chart-label{fill:#8b958f;font:11px sans-serif}.dash-chart-line{fill:none;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round}.dash-chart-point{fill:#fff;stroke-width:2.3}.dash-chart-legend{display:flex;flex-wrap:wrap;gap:15px;padding:0 22px 17px}.dash-legend-item{display:inline-flex;align-items:center;gap:7px;color:#77827c;font-size:11px}.dash-legend-dot{width:8px;height:8px;border-radius:50%}
     .dash-alert-count{padding:7px 10px;border-radius:999px;background:#fff7e8;color:#9e741e;font-size:10px;font-weight:700;white-space:nowrap}.dash-alert-list{list-style:none;margin:0;padding:0}.dash-alert{display:flex;align-items:center;gap:12px;padding:13px 17px;border-bottom:1px solid #edf1ee;text-decoration:none;transition:background .15s}.dash-alert:hover,.dash-data-row:hover{background:#f8fbf9}.dash-alert:last-child{border-bottom:0}.dash-alert-icon{display:grid;width:36px;height:36px;flex:0 0 36px;place-items:center;border-radius:11px;background:#fff5e4;color:#bd8321}.dash-alert-icon.critical{background:#fff0ef;color:#c65049}.dash-alert-icon.info{background:#edf5f8;color:#4e8493}.dash-alert-icon svg{width:18px;height:18px;stroke:currentColor}.dash-alert-copy{min-width:0;flex:1}.dash-alert-title{display:block;overflow:hidden;color:#2b3932;font-size:12px;font-weight:700;text-overflow:ellipsis;white-space:nowrap}.dash-alert-detail{display:-webkit-box;overflow:hidden;margin-top:4px;color:#8a948e;font-size:10px;line-height:1.45;-webkit-box-orient:vertical;-webkit-line-clamp:2}.dash-arrow{color:#8c9690;font-size:19px}.dash-alert-empty{display:grid;min-height:150px;place-items:center;padding:22px;color:#818c85;text-align:center;font-size:12px}.dash-alert-foot{display:flex;justify-content:center;padding:13px;border-top:1px solid var(--dash-line)}.dash-alert-foot a{color:#2d6b50;font-size:12px;font-weight:700;text-decoration:none}
@@ -34,7 +34,18 @@
     .dash-categories{display:grid;gap:13px;padding:19px 21px}.dash-category{display:grid;grid-template-columns:minmax(90px,1fr) auto;gap:9px;align-items:center;color:#69766f;font-size:11px}.dash-category-track{grid-column:1/-1;height:7px;overflow:hidden;border-radius:99px;background:#edf1ee}.dash-category-fill{height:100%;border-radius:inherit;background:#4b9168}.dash-evidence{margin-top:17px}
     .dash-quick{margin-top:19px;padding:20px 22px 22px}.dash-quick-title{margin:0;color:#25352e;font-size:16px;font-weight:700}.dash-quick-subtitle{margin:5px 0 0;color:#87918b;font-size:11px}.dash-quick-links{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-top:15px}.dash-quick-link{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:49px;padding:0 13px;border:1px solid var(--dash-line);border-radius:11px;background:#fff;color:#35453c;font-size:12px;font-weight:650;text-decoration:none;transition:border-color .15s,background .15s}.dash-quick-link:hover{border-color:#9bc4a9;background:#f7fbf8;color:#245d43}.dash-quick-link span:last-child{color:#718078;font-size:17px}
     @media(max-width:1100px){.dash-panels{grid-template-columns:1fr}.dash-stats{grid-template-columns:repeat(3,minmax(0,1fr))}}
-    @media(max-width:740px){.role-dashboard{margin:-1rem;padding:20px 14px}.dash-head{align-items:flex-start;flex-direction:column}.dash-title{font-size:25px}.dash-actions{width:100%}.dash-actions .dash-button{flex:1}.dash-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.dash-stat{min-height:84px;gap:9px;padding:11px}.dash-icon{width:39px;height:39px;flex-basis:39px;border-radius:11px}.dash-icon svg{width:20px;height:20px}.dash-stat-value{font-size:21px}.dash-stat-hint{display:none}.dash-sections{grid-template-columns:1fr}.dash-panel-head{padding:16px}.dash-chart{padding:11px 9px}.dash-chart svg{height:210px}.dash-data-row{padding:12px}.dash-data-meta{display:none}}
+    @media(max-width:740px){.role-dashboard{margin:-1rem;padding:20px 14px}.dash-head{align-items:flex-start;flex-direction:column}.dash-title{font-size:25px}.dash-actions{width:100%}.dash-actions .dash-button{flex:1}.dash-stats,.producer-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.dash-stat{min-height:84px;gap:9px;padding:11px}.producer-stats .dash-stat{min-height:100px;padding:13px;gap:10px}.dash-icon{width:39px;height:39px;flex-basis:39px;border-radius:11px}.producer-stats .dash-icon{width:44px;height:44px;flex-basis:44px}.dash-icon svg{width:20px;height:20px}.producer-stats .dash-icon svg{width:22px;height:22px}.dash-stat-value,.producer-stats .dash-stat-value{font-size:21px}.dash-stat-hint{display:none}.dash-sections{grid-template-columns:1fr}.dash-panel-head{padding:16px}.dash-chart{padding:11px 9px}.dash-chart svg{height:210px}.dash-data-row{padding:12px}.dash-data-meta{display:none}}
+</style>
+<style>
+    .admin-stats{grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+    .admin-stats .dash-stat{min-height:126px;gap:18px;padding:22px}
+    .admin-stats .dash-icon{width:56px;height:56px;flex-basis:56px;border-radius:16px}
+    .admin-stats .dash-icon svg{width:27px;height:27px}
+    .admin-stats .dash-stat-label{overflow:visible;font-size:14px;font-weight:650;text-overflow:clip;white-space:normal}
+    .admin-stats .dash-stat-value{margin-top:7px;font-size:30px}
+    .admin-stats .dash-stat-hint{font-size:14px}
+    @media(max-width:1100px){.admin-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:520px){.admin-stats{grid-template-columns:1fr;gap:11px}.admin-stats .dash-stat{min-height:104px;padding:17px}.admin-stats .dash-stat-hint{display:block;text-align:right;font-size:12px}}
 </style>
 
 <main class="role-dashboard">
@@ -47,11 +58,11 @@
         <div class="dash-actions">
             <a href="{{ $exportUrl }}" class="dash-button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 17v4h14v-4"/></svg>Exporter</a>
             <a href="{{ $secondary['url'] }}" class="dash-button">{{ html_entity_decode($secondary['label'], ENT_QUOTES | ENT_HTML5, 'UTF-8') }}</a>
-            <a href="{{ $primary['url'] }}" class="dash-button dash-button-primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg>{{ $primary['label'] }}</a>
+            @if($role !== 'admin')<a href="{{ $primary['url'] }}" class="dash-button dash-button-primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="10.8" cy="10.8" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>{{ $primary['label'] }}</a>@endif
         </div>
     </header>
 
-    <section class="dash-stats" aria-label="Indicateurs principaux">
+    <section class="dash-stats {{ $role === 'admin' ? 'admin-stats' : ($role === 'producteur' ? 'producer-stats' : '') }}" aria-label="Indicateurs principaux">
         @foreach($stats as $stat)
             <a href="{{ $stat['url'] }}" class="dash-stat {{ $toneClasses[$stat['tone']] ?? 'dash-tone-mint' }}">
                 <span class="dash-icon">
@@ -96,6 +107,21 @@
         </article>
     </section>
 
+    @if($role === 'admin')
+        <section class="dash-panel mt-5">
+            <header class="dash-section-head"><div><h2>Avis consommateurs récents</h2><p class="dash-panel-caption">Les derniers avis reçus sur les produits</p></div><a href="{{ route('admin.product-ratings.index') }}">Tous les avis&nbsp; &rsaquo;</a></header>
+            @forelse($adminRecentRatings as $rating)
+                <a class="dash-data-row" href="{{ route('admin.product-ratings.show', $rating) }}">
+                    <span class="dash-data-mark" style="color:#bd8321">★</span>
+                    <span class="dash-data-copy"><span class="dash-data-title">{{ $rating->product?->name ?: 'Produit supprimé' }} · {{ $rating->rating }}/5 — {{ $rating->consumer?->name ?: ($rating->consumer_name ?: 'Visiteur') }}</span><span class="dash-data-subtitle">{{ $rating->comment ?: 'Sans commentaire' }}</span></span>
+                    <span class="dash-data-meta">{{ $rating->created_at?->format('d/m/Y') }} · {{ $rating->status === 'published' ? 'Publié' : 'Masqué' }}</span>
+                </a>
+            @empty
+                <div class="dash-empty">Aucun avis reçu pour le moment.</div>
+            @endforelse
+        </section>
+    @endif
+
     @if($role === 'producteur' && $categories->isNotEmpty())
         <section class="dash-sections">
             <article class="dash-panel"><header class="dash-section-head"><div><h2>Produits par cat&eacute;gorie</h2></div><a href="/workspace/products">Voir les produits&nbsp; &rsaquo;</a></header>
@@ -124,5 +150,14 @@
         <p class="dash-quick-subtitle">Modules disponibles dans votre espace {{ strtolower($roleNames[$role] ?? '') }}.</p>
         <nav class="dash-quick-links" aria-label="Acc&egrave;s rapides">@foreach($quickLinks as $item)<a href="{{ $item['path'] }}" class="dash-quick-link"><span>{{ $item['name'] }}</span><span>&rsaquo;</span></a>@endforeach</nav>
     </section>
+    @if($role === 'producteur' && $harvestSummary)
+    <section class="dash-panel mt-5"><header class="dash-section-head"><h2>Planification des récoltes</h2><a href="{{ route('producer.harvest-plans.index') }}">Ouvrir le calendrier ›</a></header>
+        @if($harvestSummary['overdue']>0)<div class="mx-4 mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-800">{{ $harvestSummary['overdue'] }} récolte(s) en retard nécessitent votre attention. <a class="underline" href="{{ route('producer.harvest-plans.index',['status'=>'overdue']) }}">Voir les retards</a></div>@endif
+        <div class="grid grid-cols-2 gap-3 p-4 sm:grid-cols-3 lg:grid-cols-6">@foreach([['Planifiées',$harvestSummary['planned']],['Aujourd’hui',$harvestSummary['today']],['Cette semaine',$harvestSummary['week']],['En cours',$harvestSummary['in_progress']],['Terminées',$harvestSummary['completed']],['En retard',$harvestSummary['overdue']]] as [$label,$value])<div class="rounded-xl bg-gray-50 p-3"><span class="block text-xs text-gray-500">{{ $label }}</span><strong class="mt-1 block text-xl text-gray-900">{{ number_format($value,0,',',' ') }}</strong></div>@endforeach</div>
+        <p class="px-5 pb-3 text-sm text-gray-600">Quantité estimée à récolter : <strong>{{ number_format((float)$harvestSummary['quantity'],3,',',' ') }}</strong></p>
+        <div class="border-t border-gray-100 px-5 py-4"><h3 class="text-sm font-semibold">Prochaines récoltes</h3>@forelse($harvestSummary['upcoming'] as $harvest)<a href="{{ route('producer.harvest-plans.show',$harvest) }}" class="mt-3 flex flex-wrap justify-between gap-2 rounded-lg bg-gray-50 p-3 text-sm"><span><strong>{{ $harvest->product->name }}</strong> · {{ $harvest->farm->name }}</span><span>{{ $harvest->starts_at->format('d/m/Y') }} · {{ number_format((float)$harvest->estimated_quantity,2,',',' ') }} {{ $harvest->unit }}</span></a>@empty<p class="mt-2 text-sm text-gray-500">Aucune récolte planifiée à venir.</p>@endforelse</div>
+        <div class="px-5 pb-5"><a href="{{ route('producer.harvest-plans.create') }}" class="inline-flex rounded-lg bg-green-800 px-4 py-2 text-sm font-semibold text-white">＋ Planifier une récolte</a></div>
+    </section>
+    @endif
 </main>
 @endsection

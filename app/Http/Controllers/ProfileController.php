@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Models\User;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -13,24 +14,11 @@ class ProfileController extends Controller
 {
     public function edit()
     {
+        $user = request()->user();
+
         return view('profile.edit', [
-            'user' => request()->user()->load('passkeys'),
+            'user' => $user,
         ]);
-    }
-
-    public function disablePasskeys(Request $request)
-    {
-        $request->user()->passkeys()->delete();
-
-        return back()->with('status', 'La connexion biométrique a été désactivée.');
-    }
-
-    public function consentPasskeys(Request $request)
-    {
-        $request->validate(['consent' => ['required', 'accepted']]);
-        $request->user()->forceFill(['passkey_consent_at' => now()])->save();
-
-        return response()->json(['status' => 'consent-recorded']);
     }
 
     public function update(Request $request)
@@ -48,7 +36,7 @@ class ProfileController extends Controller
         $data = $request->validate($nameRules + [
             'email' => ['required', 'email', 'max:255', Rule::unique('users')->ignore($request->user()->id)],
             'phone' => ['nullable', 'regex:/^\d{8}$/', function (string $attribute, mixed $value, \Closure $fail) use ($user) {
-                if ($value !== '' && \App\Models\User::withTrashed()->where('phone', '+216'.$value)->where('id', '!=', $user->id)->exists()) {
+                if ($value !== '' && User::withTrashed()->where('phone', '+216'.$value)->where('id', '!=', $user->id)->exists()) {
                     $fail('Ce numéro de téléphone est déjà associé à un compte.');
                 }
             }],
@@ -76,10 +64,10 @@ class ProfileController extends Controller
             }
 
             $errors = [];
-            if ($data['phone'] && \App\Models\User::withTrashed()->where('phone', $data['phone'])->where('id', '!=', $user->id)->exists()) {
+            if ($data['phone'] && User::withTrashed()->where('phone', $data['phone'])->where('id', '!=', $user->id)->exists()) {
                 $errors['phone'] = 'Ce numéro de téléphone est déjà associé à un compte.';
             }
-            if (\App\Models\User::withTrashed()->where('email', $data['email'])->where('id', '!=', $user->id)->exists()) {
+            if (User::withTrashed()->where('email', $data['email'])->where('id', '!=', $user->id)->exists()) {
                 $errors['email'] = 'Cette adresse e-mail est déjà associée à un compte.';
             }
             if ($errors === []) {

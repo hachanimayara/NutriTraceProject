@@ -9,14 +9,17 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->timestamp('passkey_consent_at')->nullable();
+            $table->string('role_document_path')->nullable();
+            $table->string('role_document_name')->nullable();
+            $table->string('role_document_mime', 100)->nullable();
+            $table->timestamp('role_document_uploaded_at')->nullable();
         });
     }
 
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('passkey_consent_at');
+            $table->dropColumn(['role_document_path', 'role_document_name', 'role_document_mime', 'role_document_uploaded_at']);
         });
     }
 };

@@ -1,0 +1,22 @@
+/* Keep the browser's native calendar and time picker available in every form. */
+input[type='date'],
+input[type='datetime-local'],
+input[type='time'],
+input[type='month'],
+input[type='week'] {
+    -webkit-appearance: auto !important;
+    appearance: auto !important;
+    cursor: pointer;
+}
+
+input[type='date']::-webkit-calendar-picker-indicator,
+input[type='datetime-local']::-webkit-calendar-picker-indicator,
+input[type='time']::-webkit-calendar-picker-indicator,
+input[type='month']::-webkit-calendar-picker-indicator,
+input[type='week']::-webkit-calendar-picker-indicator {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    -webkit-appearance: auto !important;
+    cursor: pointer;
+}

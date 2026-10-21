@@ -15,7 +15,7 @@
 
         return $value;
     };
-    $typeFor = fn($field) => str_ends_with($field, '_at') || in_array($field, ['produced_at','expires_at','issued_at','measured_at'], true) ? (in_array($field, ['produced_at','expires_at','issued_at','measured_at'], true) ? 'date' : 'datetime-local') : (in_array($field, ['area_hectares','quantity','quantity_shipped','quantity_delivered','energy_kwh','water_liters','value'], true) ? 'number' : 'text');
+    $typeFor = fn($field) => str_ends_with($field, '_at') || in_array($field, ['produced_at','expires_at','issued_at','measured_at'], true) ? (in_array($field, ['produced_at','expires_at','issued_at','measured_at'], true) ? 'date' : 'datetime-local') : (in_array($field, ['area_hectares','quantity','quantity_shipped','quantity_delivered','energy_kwh','water_liters','value','latitude','longitude'], true) ? 'number' : 'text');
     $textarea = ['description','notes','process_description','source_notes'];
 @endphp
 <div class="mx-auto max-w-4xl">
@@ -35,9 +35,9 @@
                         <label><span class="mb-2 block text-sm font-medium text-gray-800 dark:text-gray-200">{{ $labels[$field] ?? $field }} @if(in_array($field, $required, true)) * @endif</span><select name="{{ $field }}" class="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm dark:border-gray-700 dark:bg-gray-900"><option value="">Sélectionner…</option>@foreach($list as $option)<option value="{{ $option->id }}" @selected((string)$idValue===(string)$option->id)>{{ $option->reference ?? $option->code ?? '' }} {{ $option->name ?? $option->title ?? '' }}{{ isset($option->product) ? ' · '.$option->product->name : '' }}</option>@endforeach</select>@error($field)<span class="mt-1 block text-xs text-red-700">{{ $message }}</span>@enderror</label>
                     @else
                         @php $fieldType = $typeFor($field); @endphp
-                        <label><span class="mb-2 block text-sm font-medium text-gray-800 dark:text-gray-200">{{ $labels[$field] ?? ucfirst(str_replace('_',' ',$field)) }} @if(in_array($field, $required, true)) * @endif</span>
+                        <label><span class="mb-2 block text-sm font-medium text-gray-800 dark:text-gray-200">{{ $labels[$field] ?? match($field) { 'latitude' => 'Latitude GPS', 'longitude' => 'Longitude GPS', default => ucfirst(str_replace('_',' ',$field)) } }} @if(in_array($field, $required, true)) * @endif</span>
                             @if($field === 'status' && $selectOptions['status'])<select name="status" required class="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm dark:border-gray-700 dark:bg-gray-900">@foreach($selectOptions['status'] as $value=>$label)<option value="{{ $value }}" @selected($valueFor('status')===$value)>{{ $label }}</option>@endforeach</select>
-                            @else<input name="{{ $field }}" type="{{ $fieldType }}" value="{{ $valueFor($field) }}" @if(in_array($field, $required, true)) required @endif @if($fieldType==='number') step="any" min="0" @endif class="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm dark:border-gray-700 dark:bg-gray-900">@endif
+                            @else<input name="{{ $field }}" type="{{ $fieldType }}" value="{{ $valueFor($field) }}" @if(in_array($field, $required, true)) required @endif @if($fieldType==='number') step="{{ in_array($field, ['latitude','longitude'], true) ? '0.0000001' : 'any' }}" @if($field==='latitude') min="-90" max="90" @elseif($field==='longitude') min="-180" max="180" @else min="0" @endif @endif class="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm dark:border-gray-700 dark:bg-gray-900">@endif
                             @error($field)<span class="mt-1 block text-xs text-red-700">{{ $message }}</span>@enderror</label>
                     @endif
                 @endforeach

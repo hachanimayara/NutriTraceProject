@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Notifications\AccountApproved;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
 {
@@ -24,7 +25,7 @@ class UserController extends Controller
             ->when($filters['role'] ?? null, fn ($q, $role) => $q->where('role', $role))
             ->when($filters['status'] ?? null, fn ($q, $status) => $q->where('status', $status));
 
-        $users = (clone $query)->latest()->paginate(15)->withQueryString();
+        $users = (clone $query)->latest()->paginate(5)->withQueryString();
         $statusCounts = User::query()->selectRaw('status, COUNT(*) as total')->groupBy('status')->pluck('total', 'status');
         $roleCounts = User::query()->selectRaw('role, COUNT(*) as total')->groupBy('role')->pluck('total', 'role');
         $counts = [
@@ -44,6 +45,17 @@ class UserController extends Controller
         $user->load('approver');
 
         return view('admin.users.show', compact('user'));
+    }
+
+    public function roleDocument(User $user)
+    {
+        $disk = Storage::disk('local');
+        abort_unless($user->role_document_path && $disk->exists($user->role_document_path), 404);
+
+        return $disk->download($user->role_document_path, $user->role_document_name ?: 'justificatif-activite', [
+            'Content-Type' => $user->role_document_mime ?: 'application/octet-stream',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
     }
 
     public function export(Request $request)

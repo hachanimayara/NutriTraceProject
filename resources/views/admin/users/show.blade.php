@@ -27,6 +27,16 @@
             </dl>
         </section>
         <section class="rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03] sm:p-6">
+        <section class="rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03] sm:p-6">
+            <div class="mb-4 border-b border-gray-100 pb-4 dark:border-gray-800"><h2 class="font-semibold text-gray-900 dark:text-white">Justificatif professionnel</h2><p class="mt-1 text-xs text-gray-500">Document fourni pour vérifier le rôle demandé à l’inscription.</p></div>
+            @if($user->role_document_path)
+                <p class="text-sm font-medium text-gray-800 dark:text-gray-100">{{ $user->role_document_name }}</p>
+                <p class="mt-1 text-xs text-gray-500">Envoyé le {{ $user->role_document_uploaded_at?->format('d/m/Y à H:i') ?? 'Date inconnue' }}</p>
+                <a href="{{ route('admin.users.role-document', $user) }}" class="mt-4 inline-flex rounded-xl border border-green-200 px-4 py-2.5 text-sm font-semibold text-green-800 hover:bg-green-50">Télécharger le justificatif</a>
+            @else
+                <p class="text-sm text-amber-800">Aucun justificatif n’a été fourni pour ce compte.</p>
+            @endif
+        </section>
             <div class="mb-4 border-b border-gray-100 pb-4 dark:border-gray-800"><h2 class="font-semibold text-gray-900 dark:text-white">Validation du compte</h2><p class="mt-1 text-xs text-gray-500">Historique de l’approbation par un administrateur.</p></div>
             <dl class="grid gap-5 sm:grid-cols-2"><div><dt class="text-xs text-gray-500">Statut</dt><dd class="mt-1 text-sm font-medium text-gray-800 dark:text-gray-100">{{ ['approved'=>'Approuvé','pending'=>'En attente','suspended'=>'Suspendu','deleted'=>'Supprimé'][$user->status] ?? ucfirst($user->status) }}</dd></div><div><dt class="text-xs text-gray-500">Date d’approbation</dt><dd class="mt-1 text-sm font-medium text-gray-800 dark:text-gray-100">{{ $user->approved_at?->format('d/m/Y à H:i') ?? '—' }}</dd></div><div><dt class="text-xs text-gray-500">Approuvé par</dt><dd class="mt-1 text-sm font-medium text-gray-800 dark:text-gray-100">{{ $user->approver?->name ?? '—' }}</dd></div></dl>
         </section>

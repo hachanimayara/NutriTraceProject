@@ -9,3 +9,4 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('nutritrace:analyze')->dailyAt('02:00');
+Schedule::command('nutritrace:harvest-reminders')->everyMinute()->timezone('Africa/Tunis')->withoutOverlapping();

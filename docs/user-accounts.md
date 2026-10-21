@@ -6,7 +6,7 @@
 - Connexion et récupération : `/login`, `/forgot-password`.
 - Espaces : `/admin/dashboard`, `/producteur/dashboard`, `/transformateur/dashboard`, `/distributeur/dashboard`, `/consommateur/dashboard`.
 - Administration des comptes : `/admin/users` (administrateur uniquement).
-- Profil et passkeys : `/profile`; notifications : `/notifications`.
+- Profil : `/profile`; notifications : `/notifications`.
 - Première configuration d’un administrateur : `php artisan nutritrace:admin adresse@example.tn`. La commande demande le mot de passe sans l’afficher. Aucun rôle administrateur n’est proposé à l’inscription.
 
 ## Base de données
@@ -41,10 +41,6 @@ GOOGLE_REDIRECT_URI=${APP_URL}/auth/google/callback
 ```
 
 Une inscription Google demande aussi un rôle public, un téléphone tunisien et l’acceptation des conditions. Elle ne lie jamais automatiquement une adresse déjà présente; les comptes nouveaux restent en attente. Le retour OAuth utilise le contrôle `state` de Socialite.
-
-## Passkeys / Face ID / Windows Hello
-
-Passkeys WebAuthn est intégré via le paquet Laravel maintenu. Les appareils conservent les facteurs biométriques; NutriTrace stocke la clé publique et les métadonnées WebAuthn uniquement. Les opérations nécessitent un navigateur compatible et `localhost` ou HTTPS. Pour production, utilisez l’URL HTTPS réelle et configurez le RP ID/origines dans `config/passkeys.php` (basés par défaut sur `APP_URL`). Les passkeys peuvent être créées, listées et révoquées dans le profil; le navigateur propose le mécanisme local qu’il prend en charge.
 
 ## Commandes Windows
 

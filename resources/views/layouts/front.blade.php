@@ -15,6 +15,7 @@
     <link href="{{ asset('themes/foody/lib/owlcarousel/assets/owl.carousel.min.css') }}" rel="stylesheet">
     <link href="{{ asset('themes/foody/css/bootstrap.min.css') }}" rel="stylesheet">
     <link href="{{ asset('themes/foody/css/style.css') }}" rel="stylesheet">
+    @vite('resources/js/app.js')
 </head>
 <body>
     <div class="container-fluid fixed-top px-0 wow fadeIn" data-wow-delay="0.1s">

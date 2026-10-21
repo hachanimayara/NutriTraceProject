@@ -46,7 +46,8 @@
             return this.openSubmenus[key] || false;
         },
         isActive(path) {
-            return window.location.pathname === path || '{{ $currentPath }}' === path.replace(/^\//, '');
+            const normalizedPath = path.replace(/\/$/, '');
+            return window.location.pathname === normalizedPath || window.location.pathname.startsWith(normalizedPath + '/') || '{{ $currentPath }}' === path.replace(/^\//, '');
         }
     }"
     :class="{
@@ -59,10 +60,10 @@
     <div class="pt-8 pb-7 flex items-center gap-2" :class="(!$store.sidebar.isExpanded && !$store.sidebar.isHovered && !$store.sidebar.isMobileOpen) ? 'justify-center' : 'justify-between'">
         <a href="/">
             <div class="hidden [.sidebar-expanded_&]:block">
-                <img class="dark:hidden" src="/images/logo/logo.svg" alt="Logo" width="150" height="40" />
-                <img class="hidden dark:block" src="/images/logo/logo-dark.svg" alt="Logo" width="150" height="40" />
+                <img class="dark:hidden" src="/images/logo/nutritrace.svg" alt="NutriTrace" width="150" height="40" />
+                <img class="hidden dark:block" src="/images/logo/nutritrace-dark.svg" alt="NutriTrace" width="150" height="40" />
             </div>
-            <img class="block [.sidebar-expanded_&]:hidden" src="/images/logo/logo-icon.svg" alt="Logo" width="32" height="32" />
+            <img class="block [.sidebar-expanded_&]:hidden" src="/images/logo/nutritrace-icon.svg" alt="NutriTrace" width="32" height="32" />
         </a>
     </div>
 
@@ -188,8 +189,11 @@
                                             <!-- Left Icon -->
                                             <span :class="isActive('{{ $item['path'] }}') ?
                                                 'menu-item-icon-active' :
-                                                'menu-item-icon-inactive'">
+                                                'menu-item-icon-inactive'" class="relative">
                                                 {!! MenuHelper::getIconSvg($item['icon']) !!}
+                                                @if (isset($item['unread_count']))
+                                                    <span data-messaging-unread-badge x-show="!$store.sidebar.isExpanded && !$store.sidebar.isHovered && !$store.sidebar.isMobileOpen" @if($item['unread_count'] === 0) hidden @endif class="absolute -right-2 -top-2 min-w-4 rounded-full bg-red-600 px-1 text-center text-[10px] leading-4 text-white">{{ min(99, $item['unread_count']) }}{{ $item['unread_count'] > 99 ? '+' : '' }}</span>
+                                                @endif
                                             </span>
 
                                             <!-- Item Text -->
@@ -197,6 +201,9 @@
                                                 x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen"
                                                 class="menu-item-text flex items-center gap-2">
                                                 {{ __($item['name']) }}
+                                                @if (isset($item['unread_count']))
+                                                    <span data-messaging-unread-badge x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen" @if($item['unread_count'] === 0) hidden @endif class="ml-auto rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">{{ min(99, $item['unread_count']) }}{{ $item['unread_count'] > 99 ? '+' : '' }}</span>
+                                                @endif
                                                 @if (!empty($item['new']))
                                                     <span
                                                         class="ltr:ml-2 rtl:mr-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-brand-500 text-white">
@@ -228,9 +235,5 @@
             </form>
         @endauth
 
-        <!-- Sidebar Widget -->
-        <div class="hidden [.sidebar-expanded_&]:block mt-auto">
-            @include('layouts.sidebar-widget')
-        </div>
     </div>
 </aside>

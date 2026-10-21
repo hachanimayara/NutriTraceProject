@@ -38,7 +38,7 @@ class PublicCatalogController extends Controller
                 ->where('origin', $request->string('origin')->toString())
                 ->orWhereHas('farm', fn ($farm) => $farm->where('location', $request->string('origin')->toString()))))
             ->latest()
-            ->paginate(12)
+            ->paginate(5)
             ->withQueryString();
 
         $categories = $this->publicProducts()->whereNotNull('category')->distinct()->orderBy('category')->pluck('category');
@@ -119,6 +119,13 @@ class PublicCatalogController extends Controller
         $indicators = $record->indicators->concat($record->lots->flatMap(fn ($lot) => $lot->indicators))->unique('id')->values();
         $record->setRelation('certifications', $certifications);
         $record->setRelation('indicators', $indicators);
+        $publishedRatings = $record->ratings()->published();
+        $ratingSummary = (clone $publishedRatings)->selectRaw('COUNT(*) as total, AVG(rating) as average')->first();
+        $ratingDistribution = (clone $publishedRatings)->selectRaw('rating, COUNT(*) as total')->groupBy('rating')->pluck('total', 'rating');
+        $ratings = (clone $publishedRatings)->with('consumer:id,name')->latest()->paginate(5);
+        $ownRating = auth()->user()?->role === 'consommateur'
+            ? $record->ratings()->where('consumer_id', auth()->id())->first()
+            : (auth()->guest() ? $record->ratings()->where('guest_token', hash('sha256', request()->session()->getId()))->first() : null);
         $seenTransformations = [];
         foreach ($record->lots as $lot) {
             $events->push([
@@ -189,6 +196,11 @@ class PublicCatalogController extends Controller
             'completenessItems' => $completenessItems,
             'informationCount' => $informationCount,
             'completeness' => $completeness,
+            'ratings' => $ratings,
+            'ownRating' => $ownRating,
+            'ratingCount' => (int) ($ratingSummary->total ?? 0),
+            'averageRating' => $ratingSummary->average,
+            'ratingDistribution' => $ratingDistribution,
         ]);
     }
 

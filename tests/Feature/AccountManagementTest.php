@@ -8,13 +8,11 @@ use App\Notifications\NewUserRegistration;
 use App\Notifications\ResetPasswordNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
-use Illuminate\Support\Facades\Route;
-use Laravel\Passkeys\Passkey;
-use Laravel\Passkeys\Passkeys;
 use Tests\TestCase;
 
 class AccountManagementTest extends TestCase
@@ -34,7 +32,7 @@ class AccountManagementTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin', 'is_protected_admin' => true]);
         $response = $this->post(route('register.store'), [
             'name' => 'Élodie Ben Salem', 'email' => '  Test.User@example.com ', 'phone' => '12345678',
-            'role' => 'producteur', 'password' => 'SecurePass!1234', 'password_confirmation' => 'SecurePass!1234', 'terms' => '1', 'g-recaptcha-response' => 'test-token',
+            'role' => 'producteur', 'role_document' => UploadedFile::fake()->create('preuve.pdf', 100, 'application/pdf'), 'password' => 'SecurePass!1234', 'password_confirmation' => 'SecurePass!1234', 'terms' => '1', 'g-recaptcha-response' => 'test-token',
         ]);
         $response->assertRedirect(route('login'));
         $user = User::where('email', 'test.user@example.com')->firstOrFail();
@@ -63,13 +61,13 @@ class AccountManagementTest extends TestCase
             $email = $role.'@example.test';
             $response = $this->post(route('register.store'), [
                 'name' => 'Test Person', 'email' => $email, 'phone' => '1234567x', 'role' => $role,
-                'password' => 'SecurePass!1234', 'password_confirmation' => 'SecurePass!1234', 'terms' => '1', 'g-recaptcha-response' => 'test-token',
+                'role_document' => UploadedFile::fake()->create('preuve.pdf', 100, 'application/pdf'), 'password' => 'SecurePass!1234', 'password_confirmation' => 'SecurePass!1234', 'terms' => '1', 'g-recaptcha-response' => 'test-token',
             ]);
             $response->assertSessionHasErrors('phone');
             $this->assertDatabaseMissing('users', ['email' => $email]);
             $response = $this->post(route('register.store'), [
                 'name' => 'Test Person', 'email' => $email, 'phone' => (string) (12345678 + $index), 'role' => $role,
-                'password' => 'SecurePass!1234', 'password_confirmation' => 'SecurePass!1234', 'terms' => '1', 'g-recaptcha-response' => 'test-token',
+                'role_document' => UploadedFile::fake()->create('preuve.pdf', 100, 'application/pdf'), 'password' => 'SecurePass!1234', 'password_confirmation' => 'SecurePass!1234', 'terms' => '1', 'g-recaptcha-response' => 'test-token',
             ]);
             $response->assertRedirect(route('login'));
             $this->assertDatabaseHas('users', ['email' => $email, 'role' => $role, 'status' => 'pending']);
@@ -107,7 +105,7 @@ class AccountManagementTest extends TestCase
         $this->get(route('password.request'))->assertOk()->assertSee('Mot de passe oublié');
         $admin = User::factory()->create(['role' => 'admin']);
         $this->actingAs($admin)->get(route('admin.users.index'))->assertOk()->assertSee('Gestion des utilisateurs');
-        $this->get(route('profile.edit'))->assertOk()->assertSee('Passkeys');
+        $this->get(route('profile.edit'))->assertOk();
     }
 
     public function test_signup_persists_an_admin_database_notification(): void
@@ -115,7 +113,7 @@ class AccountManagementTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
         $this->post(route('register.store'), [
             'name' => 'Trace User', 'email' => 'trace@example.test', 'phone' => '22334455', 'role' => 'distributeur',
-            'password' => 'SecurePass!1234', 'password_confirmation' => 'SecurePass!1234', 'terms' => '1', 'g-recaptcha-response' => 'test-token',
+            'role_document' => UploadedFile::fake()->create('preuve.pdf', 100, 'application/pdf'), 'password' => 'SecurePass!1234', 'password_confirmation' => 'SecurePass!1234', 'terms' => '1', 'g-recaptcha-response' => 'test-token',
         ])->assertRedirect(route('login'));
         $this->assertDatabaseHas('notifications', ['notifiable_id' => $admin->id, 'type' => NewUserRegistration::class]);
     }
@@ -136,86 +134,13 @@ class AccountManagementTest extends TestCase
         $this->actingAs($producer)->get(route('admin.dashboard'))->assertForbidden();
     }
 
-    public function test_profile_shows_passkey_configuration_status_and_controls(): void
-    {
-        $user = User::factory()->create();
 
-        $this->actingAs($user)->get(route('profile.edit'))
-            ->assertOk()
-            ->assertSee('Non configurée')
-            ->assertSee('Configurer Face ID')
-            ->assertSee('consens');
 
-        $user->passkeys()->create([
-            'name' => 'Téléphone de test',
-            'credential_id' => 'credential-profile-test',
-            'credential' => [],
-        ]);
 
-        $this->get(route('profile.edit'))
-            ->assertOk()
-            ->assertSee('Configurée')
-            ->assertSee('Modifier mon visage')
-            ->assertSee('Désactiver la reconnaissance faciale');
-    }
 
-    public function test_disabling_passkeys_deletes_only_the_authenticated_users_credentials(): void
-    {
-        $user = User::factory()->create();
-        $otherUser = User::factory()->create();
-        $user->passkeys()->create(['name' => 'Téléphone', 'credential_id' => 'credential-own', 'credential' => []]);
-        $otherUser->passkeys()->create(['name' => 'Autre téléphone', 'credential_id' => 'credential-other', 'credential' => []]);
 
-        $this->actingAs($user)->delete(route('profile.passkeys.disable'))
-            ->assertRedirect()
-            ->assertSessionHas('status', 'La connexion biométrique a été désactivée.');
 
-        $this->assertDatabaseMissing('passkeys', ['user_id' => $user->id]);
-        $this->assertDatabaseHas('passkeys', ['user_id' => $otherUser->id, 'credential_id' => 'credential-other']);
-    }
 
-    public function test_passkey_consent_must_be_explicit_and_is_recorded(): void
-    {
-        $user = User::factory()->create();
-
-        $this->actingAs($user)->postJson(route('profile.passkeys.consent'), ['consent' => false])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors('consent');
-        $this->assertDatabaseHas('users', ['id' => $user->id, 'passkey_consent_at' => null]);
-
-        $this->postJson(route('profile.passkeys.consent'), ['consent' => true])
-            ->assertOk()
-            ->assertJson(['status' => 'consent-recorded']);
-        $this->assertNotNull($user->fresh()->passkey_consent_at);
-    }
-
-    public function test_passkey_login_requires_approved_non_deleted_account(): void
-    {
-        $pending = User::factory()->create(['status' => 'pending']);
-        $passkey = new Passkey;
-        $passkey->setRelation('user', $pending);
-
-        $this->assertFalse(Passkeys::allowsLogin(request(), $passkey));
-
-        $approved = User::factory()->create(['status' => 'approved']);
-        $passkey->setRelation('user', $approved);
-        $this->assertTrue(Passkeys::allowsLogin(request(), $passkey));
-
-        $deleted = User::factory()->create(['status' => 'approved']);
-        $deleted->delete();
-        $passkey->setRelation('user', $deleted);
-        $this->assertFalse(Passkeys::allowsLogin(request(), $passkey));
-    }
-
-    public function test_login_offers_discoverable_passkey_without_revealing_account_registration(): void
-    {
-        $this->get(route('login'))
-            ->assertOk()
-            ->assertSee('Connexion biométrique (Face ID / appareil)')
-            ->assertSee('NutriTrace ne reçoit aucune donnée biométrique.');
-
-        $this->assertFalse(Route::has('passkeys.available'));
-    }
 
     public function test_admin_can_approve_pending_user_and_protected_admin_cannot_be_deleted(): void
     {
@@ -243,7 +168,7 @@ class AccountManagementTest extends TestCase
     {
         $this->from('/register')->post(route('register.store'), [
             'name' => 'Test Person', 'email' => 'captcha@example.test', 'phone' => '11223344', 'role' => 'producteur',
-            'password' => 'SecurePass!1234', 'password_confirmation' => 'SecurePass!1234', 'terms' => '1', 'g-recaptcha-response' => 'bad-token',
+            'role_document' => UploadedFile::fake()->create('preuve.pdf', 100, 'application/pdf'), 'password' => 'SecurePass!1234', 'password_confirmation' => 'SecurePass!1234', 'terms' => '1', 'g-recaptcha-response' => 'bad-token',
         ])->assertSessionHasErrors('captcha');
         $this->assertDatabaseMissing('users', ['email' => 'captcha@example.test']);
     }
@@ -252,7 +177,7 @@ class AccountManagementTest extends TestCase
     {
         $this->from('/register')->post(route('register.store'), [
             'name' => 'Test Person', 'email' => 'missing-captcha@example.test', 'phone' => '11223344', 'role' => 'producteur',
-            'password' => 'SecurePass!1234', 'password_confirmation' => 'SecurePass!1234', 'terms' => '1',
+            'role_document' => UploadedFile::fake()->create('preuve.pdf', 100, 'application/pdf'), 'password' => 'SecurePass!1234', 'password_confirmation' => 'SecurePass!1234', 'terms' => '1',
         ])->assertSessionHasErrors('captcha');
 
         Http::assertNothingSent();
@@ -285,7 +210,7 @@ class AccountManagementTest extends TestCase
         Http::fake(fn () => throw new ConnectionException('cURL error 7: Failed to connect to www.google.com port 443: Couldn\'t connect to server for https://www.google.com/recaptcha/api/siteverify?token=captcha-token-123&email=private@example.test'));
         $this->from('/register')->post(route('register.store'), [
             'name' => 'Test Person', 'email' => 'network-captcha@example.test', 'phone' => '11223344', 'role' => 'producteur',
-            'password' => 'SecurePass!1234', 'password_confirmation' => 'SecurePass!1234', 'terms' => '1', 'g-recaptcha-response' => 'captcha-token-123',
+            'role_document' => UploadedFile::fake()->create('preuve.pdf', 100, 'application/pdf'), 'password' => 'SecurePass!1234', 'password_confirmation' => 'SecurePass!1234', 'terms' => '1', 'g-recaptcha-response' => 'captcha-token-123',
         ])->assertSessionHasErrors('captcha');
 
         $this->assertDatabaseMissing('users', ['email' => 'network-captcha@example.test']);

@@ -17,6 +17,7 @@
                 static: true,
                 monthSelectorType: 'static',
                 dateFormat: '{{ $dateFormat }}',
+                minDate: '{{ $mode === 'time' ? '' : 'today' }}',
                 defaultDate: {{ $defaultDate ? (is_array($defaultDate) ? json_encode($defaultDate) : "'" . $defaultDate . "'") : 'null' }},
                 onChange: (selectedDates, dateStr, instance) => {
                     this.$dispatch('date-change', {

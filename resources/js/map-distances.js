@@ -26,7 +26,15 @@ if (root) {
     const storeIcon = L.divIcon({ className: 'nt-map-marker', html: '<span></span>', iconSize: [24, 24], iconAnchor: [12, 12] });
     const positionIcon = L.divIcon({ className: 'nt-map-position', html: '<span></span>', iconSize: [26, 26], iconAnchor: [13, 13] });
     const valid = point => point && point.latitude !== null && point.latitude !== '' && point.longitude !== null && point.longitude !== '' && Number.isFinite(Number(point.latitude)) && Number.isFinite(Number(point.longitude)) && Math.abs(Number(point.latitude)) <= 90 && Math.abs(Number(point.longitude)) <= 180;
-    const coords = point => [Number(point.latitude), Number(point.longitude)];
+    const coords = point => [Number(point.latitude), Number(point.longitude)];    const straightLineMeters = (first, second) => {
+        const radians = degrees => degrees * Math.PI / 180;
+        const [lat1, lon1] = coords(first).map(radians);
+        const [lat2, lon2] = coords(second).map(radians);
+        const dLat = lat2 - lat1;
+        const dLon = lon2 - lon1;
+        const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
+        return 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    };
     const safeText = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[char]);
     const storeById = new Map(stores.map(store => [String(store.id), store]));
     const markerPoints = [];
@@ -64,30 +72,49 @@ if (root) {
     }
     mode.addEventListener('change', updateMode);
 
-    useLocation.addEventListener('click', () => {
-        setMessage('');
+    function detectCurrentLocation({ automatic = false } = {}) {
         if (!('geolocation' in navigator)) {
-            setMessage('La géolocalisation n’est pas prise en charge par ce navigateur. Choisissez plutôt un point de vente comme départ.', 'error');
+            setMessage('La géolocalisation n’est pas prise en charge par ce navigateur. Choisissez un point de vente comme départ.', 'error');
             return;
         }
+
         useLocation.disabled = true;
         useLocation.textContent = 'Localisation en cours…';
+        currentPosition = null;
+        if (positionMarker) positionMarker.remove();
+        positionMarker = null;
+        if (routeLayer) routeLayer.remove();
+        routeLayer = null;
+        result.hidden = true;
+        if (automatic) setMessage('Détection de votre position…');
+
         navigator.geolocation.getCurrentPosition(position => {
-            currentPosition = { latitude: position.coords.latitude, longitude: position.coords.longitude };
+            currentPosition = {
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude,
+                accuracy: position.coords.accuracy,
+            };
             if (positionMarker) positionMarker.remove();
-            positionMarker = L.marker(coords(currentPosition), { icon: positionIcon }).addTo(map).bindPopup('Votre position actuelle (visible uniquement dans cette session)');
+            positionMarker = L.marker(coords(currentPosition), { icon: positionIcon })
+                .addTo(map)
+                .bindPopup(`Votre position actuelle<br>Précision estimée : ± ${Math.round(currentPosition.accuracy)} m<br>Visible uniquement dans cette session`);
             map.setView(coords(currentPosition), 13);
-            setMessage('Position récupérée. Elle reste dans cette session et n’est pas enregistrée.', 'success');
+            setMessage(`Position détectée (${currentPosition.latitude.toFixed(5)}, ${currentPosition.longitude.toFixed(5)}), précision estimée ± ${Math.round(currentPosition.accuracy)} m. Elle reste dans cette session et ne sera transmise qu’au calcul du trajet.`, 'success');
             useLocation.disabled = false;
             useLocation.textContent = 'Actualiser ma position';
         }, error => {
-            const message = error.code === 1 ? 'Autorisation de localisation refusée. Choisissez un point de vente comme départ ou autorisez la position dans votre navigateur.' : error.code === 2 ? 'Position indisponible. Réessayez ou choisissez un point de vente comme départ.' : 'La demande de position a expiré. Réessayez.';
+            const message = error.code === 1
+                ? 'Autorisation de localisation refusée. Autorisez la position dans votre navigateur ou choisissez un point de vente comme départ.'
+                : error.code === 2
+                    ? 'Position indisponible. Réessayez ou choisissez un point de vente comme départ.'
+                    : 'La demande de position a expiré. Réessayez.';
             setMessage(message, 'error');
             useLocation.disabled = false;
-            useLocation.textContent = 'Utiliser ma position';
-        }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 });
-    });
+            useLocation.textContent = 'Détecter ma position';
+        }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
+    }
 
+    useLocation.addEventListener('click', () => detectCurrentLocation());
     function selectedPoints() {
         if (mode.value === 'current-store') {
             const destination = storeById.get(destinationSelect.value);
@@ -141,7 +168,10 @@ if (root) {
             if (payload.code !== 'Ok' || !payload.routes?.length) throw new Error('Aucun itinéraire routier n’a été trouvé entre ces deux lieux.');
             const route = payload.routes[0];
             if (!Number.isFinite(route.distance) || !Number.isFinite(route.duration) || !route.geometry?.coordinates?.length) throw new Error('Le service a renvoyé un itinéraire incomplet.');
-            const latLngs = route.geometry.coordinates.map(([longitude, latitude]) => [latitude, longitude]);
+            const directDistance = straightLineMeters(points.origin, points.destination);
+            if (route.distance > Math.max(directDistance * 5, directDistance + 100000)) {
+                throw new Error('Le trajet calculé ne correspond pas à la proximité des deux points. Vérifiez la position détectée et les coordonnées enregistrées pour ce point de vente, puis réessayez.');
+            }            const latLngs = route.geometry.coordinates.map(([longitude, latitude]) => [latitude, longitude]);
             if (routeLayer) routeLayer.remove();
             routeLayer = L.polyline(latLngs, { color: '#28724d', weight: 5, opacity: 0.85 }).addTo(map);
             map.fitBounds(routeLayer.getBounds(), { padding: [35, 35] });
@@ -181,5 +211,6 @@ if (root) {
     });
 
     updateMode();
+    detectCurrentLocation({ automatic: true });
     window.setTimeout(() => map.invalidateSize(), 100);
 }

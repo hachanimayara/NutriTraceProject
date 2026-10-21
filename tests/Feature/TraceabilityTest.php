@@ -211,6 +211,52 @@ class TraceabilityTest extends TestCase
         $this->assertDatabaseMissing('stores', ['reference' => 'MAP-INVALID']);
     }
 
+    public function test_lot_date_order_is_validated_while_historical_dates_remain_allowed(): void
+    {
+        $producer = User::factory()->create(['role' => 'producteur', 'status' => 'approved']);
+        $farm = Farm::create(['user_id' => $producer->id, 'name' => 'Ferme historique', 'reference' => 'DATE-FARM', 'location' => 'Nabeul', 'country' => 'Tunisie']);
+        $product = Product::create(['user_id' => $producer->id, 'farm_id' => $farm->id, 'name' => 'Produit historique', 'reference' => 'DATE-PRODUCT', 'category' => 'Fruits', 'unit' => 'kg', 'status' => 'published']);
+        $this->actingAs($producer);
+
+        $payload = [
+            'product_id' => $product->id, 'code' => 'DATE-LOT', 'quantity' => 10, 'unit' => 'kg', 'status' => 'active',
+            'produced_at' => '2020-04-10', 'expires_at' => '2020-04-09',
+        ];
+        $this->post(route('workspace.resources.store', 'lots'), $payload)
+            ->assertSessionHasErrors('expires_at');
+        $this->assertDatabaseMissing('lots', ['code' => 'DATE-LOT']);
+
+        $payload['expires_at'] = '2020-04-20';
+        $this->post(route('workspace.resources.store', 'lots'), $payload)->assertRedirect();
+        $this->assertDatabaseHas('lots', ['code' => 'DATE-LOT', 'produced_at' => '2020-04-10 00:00:00', 'expires_at' => '2020-04-20 00:00:00']);
+    }
+
+    public function test_required_field_errors_are_translated_and_returned_for_the_specific_field(): void
+    {
+        $this->assertSame('Veuillez saisir une adresse e-mail valide.', trans('validation.email'));
+        $producer = User::factory()->create(['role' => 'producteur', 'status' => 'approved']);
+        $this->actingAs($producer)->from(route('workspace.resources.create', 'products'))
+            ->post(route('workspace.resources.store', 'products'), ['name' => '   '])
+            ->assertSessionHasErrors(['name' => 'Le champ nom est obligatoire.']);
+        $this->assertDatabaseCount('products', 0);
+    }
+
+    public function test_distribution_expected_and_delivery_dates_cannot_precede_shipment(): void
+    {
+        $producer = User::factory()->create(['role' => 'producteur', 'status' => 'approved']);
+        $distributor = User::factory()->create(['role' => 'distributeur', 'status' => 'approved']);
+        $farm = Farm::create(['user_id' => $producer->id, 'name' => 'Ferme transport', 'reference' => 'SHIP-FARM', 'location' => 'Sfax', 'country' => 'Tunisie']);
+        $product = Product::create(['user_id' => $producer->id, 'farm_id' => $farm->id, 'name' => 'Produit transport', 'reference' => 'SHIP-PRODUCT', 'category' => 'Frais', 'unit' => 'kg', 'status' => 'published']);
+        $lot = Lot::create(['product_id' => $product->id, 'created_by' => $producer->id, 'code' => 'SHIP-LOT', 'public_id' => (string) Str::uuid(), 'quantity' => 50, 'unit' => 'kg', 'status' => 'active']);
+        $store = Store::create(['user_id' => $distributor->id, 'name' => 'Point transport', 'reference' => 'SHIP-STORE', 'address' => 'Tunis', 'country' => 'Tunisie', 'status' => 'active']);
+
+        $this->actingAs($distributor)->post(route('workspace.resources.store', 'distributions'), [
+            'reference' => 'SHIP-DIST', 'lot_id' => $lot->id, 'store_id' => $store->id,
+            'quantity_shipped' => 10, 'unit' => 'kg', 'status' => 'planned',
+            'shipped_at' => '2026-10-21T12:00', 'expected_at' => '2026-10-20T12:00', 'delivered_at' => '2026-10-19T12:00',
+        ])->assertSessionHasErrors(['expected_at', 'delivered_at']);
+    }
+
     public function test_producer_qr_page_lists_only_owned_products_and_filters_them(): void
     {
         config()->set('app.public_url', 'https://nutritrace.tn');

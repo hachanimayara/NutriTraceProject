@@ -28,4 +28,6 @@ class Product extends Model
     public function lots(): HasMany { return $this->hasMany(Lot::class); }
     public function certifications(): HasMany { return $this->hasMany(Certification::class); }
     public function indicators(): HasMany { return $this->hasMany(EnvironmentalIndicator::class); }
+    public function harvestPlans(): HasMany { return $this->hasMany(HarvestPlan::class); }
+    public function ratings(): HasMany { return $this->hasMany(ProductRating::class); }
 }

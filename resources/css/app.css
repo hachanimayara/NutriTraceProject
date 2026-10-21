@@ -193,6 +193,7 @@
   }
 }
 
+
 @utility menu-item {
   @apply relative flex items-center w-full gap-3 px-3 py-2 font-medium rounded-lg text-theme-sm;
 }
@@ -303,13 +304,32 @@
   background-color: #344054;
 }
 @layer utilities {
-  /* For Remove Date Icon */
   input[type='date']::-webkit-inner-spin-button,
-  input[type='time']::-webkit-inner-spin-button,
-  input[type='date']::-webkit-calendar-picker-indicator,
-  input[type='time']::-webkit-calendar-picker-indicator {
+  input[type='time']::-webkit-inner-spin-button {
     display: none;
     -webkit-appearance: none;
+  }
+
+  input[type='date']::-webkit-calendar-picker-indicator,
+  input[type='datetime-local']::-webkit-calendar-picker-indicator,
+  input[type='time']::-webkit-calendar-picker-indicator,
+  input[type='month']::-webkit-calendar-picker-indicator,
+  input[type='week']::-webkit-calendar-picker-indicator {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    -webkit-appearance: auto !important;
+    cursor: pointer;
+  }
+
+  input[type='date'],
+  input[type='datetime-local'],
+  input[type='time'],
+  input[type='month'],
+  input[type='week'] {
+    -webkit-appearance: auto !important;
+    appearance: auto !important;
+    cursor: pointer;
   }
 }
 
@@ -974,8 +994,9 @@ html.dark #calendar,
 }
 .input-date-icon::-webkit-inner-spin-button,
 .input-date-icon::-webkit-calendar-picker-indicator {
-  opacity: 0;
+  opacity: 1 !important;
   -webkit-appearance: none;
+  cursor: pointer;
 }
 
 .swiper-button-prev svg,
@@ -1311,4 +1332,99 @@ pre code,
   direction: ltr !important;
   text-align: left !important;
   unicode-bidi: isolate;
+}
+
+/* Shared responsive safeguards for authenticated, public and traceability views. */
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    min-width: 320px;
+    max-width: 100%;
+    overflow-x: clip;
+  }
+
+  main,
+  header,
+  section,
+  article,
+  aside,
+  form,
+  fieldset,
+  .flex-1,
+  .min-w-0 {
+    min-width: 0;
+  }
+
+  img,
+  video,
+  canvas,
+  iframe {
+    max-width: 100%;
+  }
+
+  input,
+  select,
+  textarea,
+  button {
+    max-width: 100%;
+  }
+
+  pre,
+  code,
+  td,
+  th,
+  p,
+  a {
+    overflow-wrap: anywhere;
+  }
+}
+
+.admin-page-content {
+  width: 100%;
+  min-width: 0;
+}
+
+.admin-page-content :where(.overflow-x-auto, .overflow-x-scroll),
+.table-responsive,
+.pc-table-wrap {
+  max-width: 100%;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 767px) {
+  .admin-page-content {
+    padding: 14px 12px !important;
+  }
+
+  .admin-page-content :where(img, canvas, svg) {
+    height: auto;
+  }
+
+  #action-confirm-dialog .confirm-content {
+    padding: 20px;
+  }
+
+  #action-confirm-dialog .confirm-actions {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-page-content {
+    padding: 12px 10px !important;
+  }
+
+  .admin-page-content :where(h1) {
+    font-size: clamp(1.4rem, 7vw, 1.9rem);
+    line-height: 1.2;
+  }
+
+  .admin-page-content :where(.overflow-x-auto table) {
+    min-width: 620px;
+  }
 }

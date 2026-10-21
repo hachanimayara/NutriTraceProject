@@ -1,12 +1,13 @@
 @extends('layouts.admin')
 
-@section('content')
-@php $fieldLabels = ['name'=>'Nom du produit','generic_name'=>'Nom générique','brands'=>'Marque','code'=>'Code-barres','categories'=>'Catégorie','quantity'=>'Quantité / conditionnement','ingredients'=>'Ingrédients','allergens'=>'Allergènes','traces'=>'Traces','nutrition'=>'Valeurs nutritionnelles pour 100 g/ml','nutri_score'=>'Nutri-Score','eco_score'=>'Eco-Score']; @endphp
-<style>
-    #manual-entry-dialog{position:fixed;inset:0;margin:auto;width:min(920px,calc(100vw - 32px));max-width:none;max-height:calc(100dvh - 32px);padding:0;overflow:auto;border:1px solid #dce5df;border-radius:20px;background:#fff;color:#1f2937;box-shadow:0 24px 80px #10251b40}
-    #manual-entry-dialog::backdrop{background:#101b1680;backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
-    @media(max-width:640px){#manual-entry-dialog{width:calc(100vw - 16px);max-height:calc(100dvh - 16px);border-radius:14px}}
+@section('content')<style>
+    .food-catalog-delete-form { flex: 0 0 auto; margin: 0; }
+    .food-catalog-delete-button { display: inline-flex !important; width: 40px !important; min-width: 40px !important; height: 40px !important; min-height: 40px !important; padding: 0 !important; align-items: center; justify-content: center; border: 1px solid #fecaca; border-radius: 10px; background: #fff; color: #b91c1c; line-height: 1; cursor: pointer; transition: background-color .15s, border-color .15s; }
+    .food-catalog-delete-button:hover { border-color: #f87171; background: #fef2f2; }
+    .food-catalog-delete-button svg { display: block; width: 18px !important; height: 18px !important; flex: 0 0 18px; }
 </style>
+@php $fieldLabels = ['name'=>'Nom du produit','generic_name'=>'Nom générique','brands'=>'Marque','code'=>'Code-barres','categories'=>'Catégorie','quantity'=>'Quantité / conditionnement','ingredients'=>'Ingrédients','allergens'=>'Allergènes','traces'=>'Traces','nutrition'=>'Valeurs nutritionnelles pour 100 g/ml','nutri_score'=>'Nutri-Score','eco_score'=>'Eco-Score']; @endphp
+
 <main class="space-y-6 text-gray-800">
     <nav class="text-xs text-gray-500"><a class="hover:text-green-800" href="{{ route('transformateur.dashboard') }}">Tableau de bord</a><span class="mx-2">›</span>Catalogue alimentaire</nav>
     <header><p class="text-xs font-semibold uppercase tracking-[.14em] text-green-800">Espace transformateur</p><h1 class="mt-2 text-3xl font-semibold tracking-tight text-gray-900">Catalogue alimentaire et informations nutritionnelles</h1><p class="mt-2 max-w-3xl text-sm text-gray-500">Recherchez un aliment dans Open Food Facts, puis choisissez les informations à rattacher à une fiche produit publiée.</p></header>
@@ -19,7 +20,7 @@
         <form method="get" action="{{ route('workspace.open-food-facts.search') }}" class="mt-5 grid gap-4 md:grid-cols-2">
             <div><label for="off-query" class="mb-2 block text-sm font-medium">Nom du produit</label><input id="off-query" name="query" value="{{ old('query', request('query')) }}" maxlength="120" class="w-full rounded-xl border border-gray-300 px-4 py-3" placeholder="Ex. huile d’olive" autocomplete="off"></div>
             <div><label for="off-barcode" class="mb-2 block text-sm font-medium">Code-barres (EAN/UPC)</label><input id="off-barcode" name="barcode" value="{{ old('barcode', request('barcode')) }}" inputmode="numeric" pattern="[0-9]{8,14}" class="w-full rounded-xl border border-gray-300 px-4 py-3" placeholder="8 à 14 chiffres"></div>
-            <div class="flex flex-wrap items-center gap-3 md:col-span-2"><button class="rounded-xl bg-green-800 px-5 py-3 text-sm font-semibold text-white hover:bg-green-900">Rechercher</button><button type="button" data-open-manual-dialog class="rounded-xl border border-gray-300 px-5 py-3 text-sm font-semibold text-gray-700">Saisie manuelle</button><span class="text-xs text-gray-500">La recherche par nom utilise Search-a-licious ; le code-barres utilise l’API produit v3.</span></div>
+            <div class="flex flex-wrap items-center gap-3 md:col-span-2"><button class="rounded-xl bg-green-800 px-5 py-3 text-sm font-semibold text-white hover:bg-green-900">Rechercher</button><span class="text-xs text-gray-500">La recherche par nom utilise Search-a-licious ; le code-barres utilise l’API produit v3.</span></div>
         </form>
     </section>
 
@@ -39,46 +40,50 @@
             <form method="post" action="{{ route('workspace.open-food-facts.import') }}" class="mt-6 space-y-5" id="off-import-form">
                 @csrf
                 <input type="hidden" name="barcode" value="{{ $detail['code'] }}">
-                <div><label for="local-product" class="mb-2 block text-sm font-semibold">Fiche produit locale (publiée)</label><select name="local_product_id" id="local-product" class="w-full rounded-xl border border-gray-300 px-4 py-3" required>@foreach($products as $product)<option value="{{ $product->id }}">{{ $product->name }} · {{ $product->reference }}</option>@endforeach</select>
-                @if($products->isEmpty())<p class="mt-2 text-sm text-amber-800">Aucun produit publié n’est disponible pour le moment. Les produits sont créés et publiés dans le flux existant, puis associés aux lots de sortie.</p>@endif</div>
                 <fieldset><legend class="mb-3 text-sm font-semibold">Choisissez les champs à importer</legend><div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">@foreach($fieldLabels as $key=>$label)<label class="flex items-start gap-2 rounded-lg border border-gray-200 p-3 text-sm"><input type="checkbox" name="fields[]" value="{{ $key }}" @checked(filled($detailValues[$key])) class="mt-0.5 accent-green-800"><span>{{ $label }}<small class="block text-gray-500">{{ filled($detailValues[$key]) ? 'Disponible' : 'Non renseigné' }}</small></span></label>@endforeach</div></fieldset>
-                @if($products->isNotEmpty())<label class="flex items-start gap-2 text-sm text-gray-700"><input type="checkbox" name="overwrite" value="1" class="mt-1 accent-green-800"><span>J’autorise le remplacement des champs Open Food Facts déjà enregistrés dans cette fiche.</span></label><button class="rounded-xl bg-green-800 px-5 py-3 text-sm font-semibold text-white hover:bg-green-900">Importer les informations sélectionnées</button>@endif
-                <p class="text-xs text-gray-500">L’import ne modifie pas le nom, la quantité de production, les dates, les matières premières ni les lots NutriTrace.</p>
+                <button class="rounded-xl bg-green-800 px-5 py-3 text-sm font-semibold text-white hover:bg-green-900">Enregistrer le produit au catalogue</button>
+                <p class="text-xs text-gray-500">Cette fiche sera enregistrée séparément de vos produits NutriTrace et ne sera liée à aucun lot.</p>
             </form>
             @if($detail['image'])<p class="mt-4 text-xs text-gray-500">Les données Open Food Facts sont sous licence ODbL ; attribution : Open Food Facts. Les images sont fournies par la base.</p>@endif
         </section>
     @endif
 
-    <dialog id="manual-entry-dialog" aria-labelledby="manual-entry-title">
-        <div class="p-5 sm:p-7">
-        <header class="mb-5 flex items-start justify-between gap-4"><div><h2 id="manual-entry-title" class="text-lg font-semibold">Saisie manuelle</h2><p class="mt-1 text-sm text-gray-500">Utile si le produit n’est pas répertorié ou si le catalogue est indisponible.</p></div><button type="button" data-close-manual-dialog aria-label="Fermer" class="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-gray-200 text-xl text-gray-500 hover:bg-gray-50">&times;</button></header>
-        @if($products->isEmpty())<p class="mt-4 rounded-xl bg-gray-50 p-4 text-sm text-gray-600">Créez d’abord un produit dans le flux de gestion existant, puis publiez-le pour pouvoir y rattacher les données.</p>@else
-        <form method="post" action="{{ route('workspace.open-food-facts.import') }}" class="mt-5 space-y-5" id="manual-import-form">
-            @csrf<input type="hidden" name="manual_mode" value="1">
-            <div><label for="manual-product" class="mb-2 block text-sm font-semibold">Fiche produit publiée</label><select name="local_product_id" id="manual-product" class="w-full rounded-xl border border-gray-300 px-4 py-3" required>@foreach($products as $product)<option value="{{ $product->id }}">{{ $product->name }} · {{ $product->reference }}</option>@endforeach</select></div>
-            <div class="grid gap-4 sm:grid-cols-2">@foreach(['name'=>'Nom','generic_name'=>'Nom générique','brands'=>'Marque','code'=>'Code-barres','categories'=>'Catégorie','quantity'=>'Conditionnement','ingredients'=>'Ingrédients','allergens'=>'Allergènes','traces'=>'Traces','nutrition'=>'Valeurs nutritionnelles pour 100 g/ml','nutri_score'=>'Nutri-Score','eco_score'=>'Eco-Score'] as $key=>$label)<div><label for="manual-{{ $key }}" class="mb-1.5 block text-sm font-medium">{{ $label }}</label><input id="manual-{{ $key }}" name="manual[{{ $key }}]" @if($key==='code')inputmode="numeric" pattern="[0-9]{8,14}"@endif class="w-full rounded-xl border border-gray-300 px-3 py-2.5"></div>@endforeach</div>
-            <fieldset><legend class="mb-2 text-sm font-semibold">Champs à enregistrer</legend><div class="flex flex-wrap gap-3">@foreach(['name','generic_name','brands','code','categories','quantity','ingredients','allergens','traces','nutrition','nutri_score','eco_score'] as $key)<label class="flex items-center gap-2 text-sm"><input type="checkbox" name="fields[]" value="{{ $key }}" class="accent-green-800">{{ ['name'=>'Nom','generic_name'=>'Nom générique','brands'=>'Marque','code'=>'Code-barres','categories'=>'Catégorie','quantity'=>'Conditionnement','ingredients'=>'Ingrédients','allergens'=>'Allergènes','traces'=>'Traces','nutrition'=>'Valeurs nutritionnelles','nutri_score'=>'Nutri-Score','eco_score'=>'Eco-Score'][$key] }}</label>@endforeach</div></fieldset>
-            <label class="flex items-start gap-2 text-sm"><input type="checkbox" name="overwrite" value="1" class="mt-1 accent-green-800"><span>J’autorise le remplacement des informations existantes.</span></label><button class="rounded-xl bg-green-800 px-5 py-3 text-sm font-semibold text-white hover:bg-green-900">Enregistrer les informations manuelles</button>
-        </form>@endif
+    <section class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-7">
+        <h2 class="text-lg font-semibold">Produits enregistrés dans mon catalogue</h2>
+        <div class="mt-4 grid gap-4 lg:grid-cols-2">
+            @forelse($items as $item)
+                <article class="rounded-xl border border-gray-200 p-4">
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <h3 class="font-semibold">{{ $item->name }}</h3>
+                            <p class="mt-1 text-xs text-gray-500">{{ $item->source === 'manual' ? 'Catalogue local' : 'Open Food Facts' }} · Code-barres : {{ $item->barcode ?: 'Non renseigné' }} · {{ $item->created_at->format('d/m/Y H:i') }}</p>
+                        </div>
+                        <form method="post" class="food-catalog-delete-form" action="{{ route('workspace.open-food-facts.items.destroy', $item) }}" data-confirm-action="Supprimer {{ $item->name }} de votre catalogue alimentaire ?">
+                            @csrf @method('DELETE')
+                            <button type="submit" class="food-catalog-delete-button" aria-label="Supprimer {{ $item->name }}" title="Supprimer cette fiche"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2m3 0-.8 14H5.8L5 6m4 4v6m6-6v6"/></svg></button>
+                        </form>
+                    </div>
+                    <dl class="mt-3 grid gap-2 sm:grid-cols-2">
+                        @foreach($item->data as $key => $value)
+                            <div><dt class="text-xs text-gray-500">{{ $fieldLabels[$key] ?? ucfirst(str_replace('_', ' ', $key)) }}</dt><dd class="break-words text-sm">{{ is_array($value) ? collect($value)->map(fn($v, $k) => ucfirst(str_replace('_', ' ', $k)).': '.$v)->implode(' · ') : $value }}</dd></div>
+                        @endforeach
+                    </dl>
+                </article>
+            @empty
+                <p class="text-sm text-gray-500">Aucun produit n’a encore été enregistré dans votre catalogue.</p>
+            @endforelse
         </div>
-    </dialog>
-    <section class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-7"><h2 class="text-lg font-semibold">Informations déjà enregistrées</h2><div class="mt-4 grid gap-4 lg:grid-cols-2">@forelse($products->filter(fn($product)=>filled($product->open_food_facts_data)) as $product)<article class="rounded-xl border border-gray-200 p-4"><h3 class="font-semibold">{{ $product->name }} <span class="text-sm font-normal text-gray-500">· {{ $product->reference }}</span></h3><p class="mt-1 text-xs text-gray-500">{{ $product->open_food_facts_source === 'manual' ? 'Saisie manuelle' : 'Open Food Facts' }} · Code : {{ $product->open_food_facts_code ?: 'Non renseigné' }} · {{ $product->open_food_facts_imported_at?->format('d/m/Y H:i') }}</p><dl class="mt-3 grid gap-2 sm:grid-cols-2">@foreach($product->open_food_facts_data as $key=>$value)<div><dt class="text-xs text-gray-500">{{ $fieldLabels[$key] ?? ucfirst(str_replace('_',' ',$key)) }}</dt><dd class="break-words text-sm">{{ is_array($value) ? collect($value)->map(fn($v,$k)=>ucfirst(str_replace('_',' ',$k)).': '.$v)->implode(' · ') : $value }}</dd></div>@endforeach</dl></article>@empty<p class="text-sm text-gray-500">Aucune information enrichie n’a encore été enregistrée.</p>@endforelse</div></section>
+        @if($items->hasPages())
+            <nav class="mt-6 border-t border-gray-100 pt-4" aria-label="Pagination du catalogue alimentaire">{{ $items->links() }}</nav>
+        @endif
+    </section>
     <p class="text-xs text-gray-500">Attribution des données : Open Food Facts. Réutilisation soumise à la licence ODbL. Les informations peuvent être incomplètes ; vérifiez-les avant usage.</p>
 </main>
 <script>
 document.querySelectorAll('form[action="{{ route('workspace.open-food-facts.search') }}"]').forEach(form => form.addEventListener('submit', () => { const button = form.querySelector('button[type="submit"],button:not([type])'); if (button) { button.disabled = true; button.textContent = 'Recherche en cours…'; } }));
-const manualDialog = document.getElementById('manual-entry-dialog');
-document.querySelector('[data-open-manual-dialog]')?.addEventListener('click', () => manualDialog?.showModal());
-document.querySelector('[data-close-manual-dialog]')?.addEventListener('click', () => manualDialog?.close());
-manualDialog?.addEventListener('click', event => { if (event.target === manualDialog) manualDialog.close(); });
-@if($errors->any() && old('manual_mode')) manualDialog?.showModal(); @endif
-document.querySelectorAll('#off-import-form, #manual-import-form').forEach(form => form.addEventListener('submit', event => {
-    const select = form.querySelector('select[name="local_product_id"]');
-    if (!select?.value) { event.preventDefault(); return; }
+document.querySelectorAll('#off-import-form').forEach(form => form.addEventListener('submit', event => {
     const selected = [...form.querySelectorAll('input[name="fields[]"]:checked')];
     if (!selected.length) { event.preventDefault(); alert('Sélectionnez au moins un champ à importer.'); return; }
-    const overwrite = form.querySelector('input[name="overwrite"]');
-    if (overwrite?.checked && !window.confirm('Confirmez-vous le remplacement des informations déjà enregistrées ?')) event.preventDefault();
 }));
 </script>
 @endsection

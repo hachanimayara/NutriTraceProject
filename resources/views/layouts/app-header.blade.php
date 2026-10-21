@@ -1,4 +1,4 @@
-<header
+﻿<header
     class="sticky top-0 flex w-full bg-white border-gray-200 z-99999 dark:border-gray-800 dark:bg-gray-900 xl:border-b"
     x-data="{
         isApplicationMenuOpen: false,
@@ -51,8 +51,8 @@
 
             <!-- Logo (mobile only) -->
             <a href="/" class="xl:hidden">
-                <img class="dark:hidden" src="/images/logo/logo.svg" alt="Logo" />
-                <img class="hidden dark:block" src="/images/logo/logo-dark.svg" alt="Logo" />
+                <img class="dark:hidden" src="/images/logo/nutritrace.svg" alt="NutriTrace" width="150" height="40" />
+                <img class="hidden dark:block" src="/images/logo/nutritrace-dark.svg" alt="NutriTrace" width="150" height="40" />
             </a>
 
             <!-- Application Menu Toggle (mobile only) -->
@@ -88,7 +88,7 @@
                             tabindex="-1"
                             @click="$refs.searchInput?.focus()"
                             class="absolute ltr:right-2.5 rtl:left-2.5 top-1/2 inline-flex -translate-y-1/2 items-center gap-0.5 rounded-lg border border-gray-200 bg-gray-50 px-[7px] py-[4.5px] text-xs -tracking-[0.2px] text-gray-500 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400">
-                            <span> ⌘ </span>
+                            <span> âŒ˜ </span>
                             <span> K </span>
                         </button>
                     </div>
@@ -118,6 +118,33 @@
                     </svg>
                 </button>
 
+                @php
+                    $headerNotifications = auth()->user()->notifications()->latest()->limit(5)->get();
+                    $unreadNotificationCount = auth()->user()->unreadNotifications()->count();
+                @endphp
+                <style>@media(max-width:640px){.notification-dropdown{position:fixed!important;top:84px;left:12px;right:12px;width:auto!important;max-width:none!important;margin-top:0}}</style>
+                <div class="relative" x-data="{ notificationDropdownOpen: false }" @click.outside="notificationDropdownOpen = false">
+                    <button type="button" @click="notificationDropdownOpen = !notificationDropdownOpen" :aria-expanded="notificationDropdownOpen" aria-label="Notifications{{ $unreadNotificationCount ? ', '.$unreadNotificationCount.' non lues' : '' }}" title="Notifications" class="relative flex h-11 w-11 items-center justify-center rounded-full text-amber-500 transition-colors hover:bg-amber-50 dark:hover:bg-amber-400/10">
+                        <svg width="29" height="29" viewBox="0 0 24 24" fill="#f6b744" aria-hidden="true"><path d="M12 2.5a6.5 6.5 0 0 0-6.5 6.5v3.2c0 1.65-.5 3.26-1.44 4.61L2.7 18.7a1.6 1.6 0 0 0 1.32 2.5h15.96a1.6 1.6 0 0 0 1.32-2.5l-1.36-1.89a8 8 0 0 1-1.44-4.61V9A6.5 6.5 0 0 0 12 2.5Z"/><path d="M9 22a3 3 0 0 0 6 0H9Z"/></svg>
+                        @if($unreadNotificationCount > 0)<span class="absolute right-0 top-0 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-none text-white ring-2 ring-white dark:ring-gray-900">{{ $unreadNotificationCount > 99 ? '99+' : $unreadNotificationCount }}</span>@endif
+                    </button>
+                    <div x-cloak x-show="notificationDropdownOpen" x-transition class="notification-dropdown absolute right-0 z-50 mt-3 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl dark:border-gray-800 dark:bg-gray-900" style="width:360px;max-width:calc(100vw - 24px)">
+                        <div class="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-b border-gray-100 px-4 py-3 dark:border-gray-800"><h2 class="whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-white">Notifications</h2><span class="whitespace-nowrap text-xs text-gray-500">{{ $unreadNotificationCount }} non lue(s)</span></div>
+                        <div class="max-h-96 overflow-y-auto">
+                            @forelse($headerNotifications as $notification)
+                                <div data-notification-trigger data-notification-detail="{{ json_encode($notification->data, JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) }}" data-notification-date="{{ $notification->created_at->format('d/m/Y H:i') }}" data-notification-read="{{ $notification->read_at ? '0' : '1' }}" data-notification-read-url="{{ route('notifications.read', $notification->id) }}" data-notification-delete-url="{{ route('notifications.destroy', $notification->id) }}" role="button" tabindex="0" @click="notificationDropdownOpen = false" class="cursor-pointer border-b border-gray-100 px-4 py-3 last:border-0 dark:border-gray-800 {{ $notification->read_at ? '' : 'bg-green-50/70 dark:bg-green-900/10' }}">
+                                    <div class="flex items-start justify-between gap-2"><p class="min-w-0 text-sm font-medium text-gray-800 dark:text-gray-100">{{ ($notification->data['message'] ?? null) === 'Nouvelle demande de compte' && !empty($notification->data['name']) ? 'Nouvelle demande de compte : '.$notification->data['name'] : ($notification->data['message'] ?? 'Notification NutriTrace') }}</p><form method="post" action="{{ route('notifications.destroy', $notification->id) }}" data-confirm-action="Supprimer cette notification ?">@csrf @method('DELETE')<button type="submit" class="rounded-md p-1 text-gray-400 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-500/10" aria-label="Supprimer la notification" title="Supprimer"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2m3 0-.8 14H5.8L5 6m4 4v6m6-6v6"/></svg></button></form></div>
+                                    @if(!empty($notification->data['preview']))<p class="mt-1 line-clamp-2 text-xs text-gray-500 dark:text-gray-400">{{ $notification->data['preview'] }}</p>@elseif(!empty($notification->data['email']))<p class="mt-1 line-clamp-2 text-xs text-gray-500 dark:text-gray-400">{{ $notification->data['email'] }} · {{ match($notification->data['role'] ?? '') { 'producteur' => 'Producteur', 'transformateur' => 'Transformateur', 'distributeur' => 'Distributeur', default => 'Utilisateur' } }}</p>@endif
+                                    <div class="mt-2 flex items-center justify-between gap-3"><time class="text-[11px] text-gray-500">{{ $notification->created_at->diffForHumans() }}</time>@if(!$notification->read_at)<form method="post" action="{{ route('notifications.read', $notification->id) }}">@csrf<button class="text-xs font-semibold text-green-800 hover:underline dark:text-green-400">Marquer comme lue</button></form>@endif</div>
+                                </div>
+                            @empty
+                                <p class="px-4 py-7 text-center text-sm text-gray-500">Aucune notification pour le moment.</p>
+                            @endforelse
+                        </div>
+                        <button type="button" @click="notificationDropdownOpen = false; $dispatch('open-all-notifications')" data-open-all-notifications class="block w-full border-t border-gray-100 px-4 py-3 text-center text-sm font-semibold text-green-800 hover:bg-gray-50 dark:border-gray-800 dark:text-green-400 dark:hover:bg-white/5">Afficher toutes les notifications</button>
+                    </div>
+                </div>
+
             </div>
 
             <div class="relative" @click.outside="isUserDropdownOpen = false">
@@ -137,3 +164,25 @@
         </div>
     </div>
 </header>
+
+<style>
+    #all-notifications-dialog{position:fixed;inset:0;margin:auto;width:min(760px,calc(100vw - 28px));height:min(760px,calc(100dvh - 28px));max-width:none;max-height:none;padding:0;overflow:hidden;border:1px solid #dce5df;border-radius:18px;background:#f8faf9;box-shadow:0 24px 80px #10251b40}
+    #all-notifications-dialog::backdrop{background:rgba(16,35,29,.42);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
+</style>
+<dialog id="all-notifications-dialog" aria-label="Toutes les notifications">
+    <div class="flex h-full flex-col"><header class="flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3 dark:border-gray-800 dark:bg-gray-900"><h2 class="text-base font-semibold text-gray-900 dark:text-white">Toutes les notifications</h2><button type="button" data-close-all-notifications class="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-xl text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300" aria-label="Fermer">×</button></header><iframe title="Liste de toutes les notifications" data-all-notifications-frame class="min-h-0 w-full flex-1 border-0" src="about:blank"></iframe></div>
+</dialog>
+@include('profile.partials.notification-detail-dialog')
+<script>
+    (() => {
+        const dialog = document.getElementById('all-notifications-dialog');
+        const frame = dialog?.querySelector('[data-all-notifications-frame]');
+        if (!dialog || !frame) return;
+        window.addEventListener('open-all-notifications', () => {
+            frame.src = @json(route('notifications.index', ['popup' => 1]));
+            dialog.showModal();
+        });
+        dialog.querySelector('[data-close-all-notifications]').addEventListener('click', () => dialog.close());
+        dialog.addEventListener('click', event => { if (event.target === dialog) dialog.close(); });
+    })();
+</script>

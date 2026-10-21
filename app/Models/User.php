@@ -3,19 +3,19 @@
 namespace App\Models;
 
 use App\Notifications\ResetPasswordNotification;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Laravel\Passkeys\Contracts\PasskeyUser;
-use Laravel\Passkeys\PasskeyAuthenticatable;
 
-class User extends Authenticatable implements PasskeyUser
+class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, PasskeyAuthenticatable, SoftDeletes;
+    use HasFactory, Notifiable, SoftDeletes;
 
     public const PUBLIC_ROLES = ['producteur', 'transformateur', 'distributeur'];
 
@@ -55,7 +55,8 @@ class User extends Authenticatable implements PasskeyUser
             'approved_at' => 'datetime',
             'terms_accepted_at' => 'datetime',
             'is_protected_admin' => 'boolean',
-            'passkey_consent_at' => 'datetime',
+            'role_document_uploaded_at' => 'datetime',
+            'last_active_at' => 'datetime',
         ];
     }
 
@@ -67,6 +68,22 @@ class User extends Authenticatable implements PasskeyUser
     public function approver(): BelongsTo
     {
         return $this->belongsTo(self::class, 'approved_by');
+    }
+
+    public function harvestPlans(): HasMany
+    {
+        return $this->hasMany(HarvestPlan::class);
+    }
+
+    public function productRatings(): HasMany
+    {
+        return $this->hasMany(ProductRating::class, 'consumer_id');
+    }
+
+    public function chatConversations(): BelongsToMany
+    {
+        return $this->belongsToMany(ChatConversation::class, 'chat_conversation_user', 'user_id', 'conversation_id')
+            ->withPivot('last_read_at')->withTimestamps();
     }
 
     public function isApproved(): bool

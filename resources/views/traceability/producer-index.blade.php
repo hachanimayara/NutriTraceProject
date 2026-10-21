@@ -44,8 +44,9 @@
     <nav class="flex items-center gap-2 text-xs text-gray-500"><a href="{{ auth()->user()->getDashboardUrl() }}" class="hover:text-green-800">Tableau de bord</a><span>&rsaquo;</span><span>{{ $title }}</span></nav>
     <header class="flex flex-wrap items-center justify-between gap-4">
         <div><h1 class="text-3xl font-semibold tracking-tight text-gray-900">{{ $title }}</h1><p class="mt-2 text-sm text-gray-500">{!! $isProducts ? 'G&#233;rez le catalogue et reliez chaque produit &#224; son exploitation.' : 'Suivez les origines, pratiques et producteurs responsables.' !!}</p></div>
-        <div class="flex gap-3"><a href="{{ route('workspace.resources.export', $resource) }}" class="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-800 hover:bg-gray-50"><span aria-hidden="true"><svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 17v4h14v-4"/></svg></span> Exporter</a><button type="button" data-open-producer-modal class="inline-flex items-center gap-2 rounded-xl bg-green-800 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-green-900/10 hover:bg-green-900"><span aria-hidden="true"><svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></span> Ajouter {{ $isProducts ? 'un produit' : 'une exploitation' }}</button></div>
+        <div class="flex gap-3"><a href="{{ route('workspace.resources.export', $resource) }}" class="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-800 hover:bg-gray-50"><span aria-hidden="true"><svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 17v4h14v-4"/></svg></span> Exporter</a><a href="{{ route('workspace.resources.index', ['resource' => $resource, 'modal' => 'create']) }}" class="rounded-xl bg-green-800 px-5 py-3 text-sm font-semibold text-white">＋ Ajouter {{ $isProducts ? 'un produit' : 'une exploitation' }}</a></div>
     </header>
+    <div class="-mt-3 flex justify-end"><button type="button" data-open-csv-import="{{ route('workspace.resources.import', ['resource' => $resource, 'popup' => 1]) }}" class="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-800 hover:bg-gray-50">Importer CSV</button></div>
 
     @if(session('status'))<div class="rounded-xl border border-green-200 bg-green-50 p-4 text-sm font-medium text-green-900" role="status">{{ session('status') }}</div>@endif
     @if($errors->has('associated_products'))<div class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">{{ $errors->first('associated_products') }}</div>@endif
@@ -66,14 +67,14 @@
         <div class="overflow-x-auto"><table class="w-full min-w-[850px] text-left text-sm"><thead><tr>
             @if($isProducts)<th>Produit</th><th>Référence</th><th>Catégorie</th><th>Exploitation</th><th>Statut</th>
             @else<th>Exploitation</th><th>Localisation</th><th>Agriculture</th><th>Producteur</th><th>Statut</th>@endif
-            <th class="text-right">Actions</th>
+            <th class="text-right">Détails</th>
         </tr></thead><tbody>
             @forelse($records as $record)
                 <tr class="hover:bg-green-50/30">
                     @if($isProducts)<td><a class="font-semibold text-gray-900 hover:text-green-800" data-detail-popup href="{{ route('workspace.resources.show', [$resource,$record]) }}">{{ $record->name }}</a></td><td class="text-gray-600">{{ $record->reference }}</td><td class="text-gray-600">{{ $record->category }}</td><td class="text-gray-600">{{ $record->farm?->name ?? 'À associer' }}</td>
                     @else<td><a class="font-semibold text-gray-900 hover:text-green-800" data-detail-popup href="{{ route('workspace.resources.show', [$resource,$record]) }}">{{ $record->name }}</a></td><td class="text-gray-600">{{ $record->location }}, {{ $record->country }}</td><td class="text-gray-600">{{ $record->farming_method ?: 'Non renseignée' }}</td><td class="text-gray-600">{{ $record->owner?->name ?? auth()->user()->name }}</td>@endif
                     <td><span class="p-status {{ in_array($record->status,['review','draft']) ? ($record->status==='draft'?'draft':'review') : '' }}"><i class="h-1.5 w-1.5 rounded-full bg-current"></i>{!! mb_encode_numericentity(match($record->status){'active'=>'Active','review'=>'&#192; v&#233;rifier','draft'=>'Brouillon','published'=>'Publi&#233;','archived'=>'Archiv&#233;',default=>ucfirst($record->status)}, [0x80, 0x10FFFF, 0, 0x1FFFFF], 'UTF-8') !!}</span></td>
-                    <td><div class="flex justify-end gap-2"><a class="p-action" aria-label="Voir {{ $record->name }}" title="Voir" data-detail-popup href="{{ route('workspace.resources.show',[$resource,$record]) }}"><svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="10.8" cy="10.8" r="6.5"/><path d="m16 16 4.5 4.5"/></svg></a><a class="p-action" aria-label="Modifier {{ $record->name }}" title="Modifier" href="{{ route('workspace.resources.edit',[$resource,$record]) }}"><svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m14 5 5 5M4 20l4.2-.8L19 8.4 15.6 5 4.8 15.8 4 20Z"/></svg></a><form method="post" action="{{ route('workspace.resources.destroy',[$resource,$record]) }}" data-confirm-action="Supprimer cet élément ?">@csrf @method('DELETE')<button class="p-action" aria-label="Supprimer {{ $record->name }}" title="Supprimer"><svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 14h10l1-14M9 7V4h6v3"/></svg></button></form></div></td>
+                    <td><div class="flex justify-end gap-2"><a class="p-action" aria-label="Voir {{ $record->name }}" title="Voir" data-detail-popup href="{{ route('workspace.resources.show',[$resource,$record]) }}"><svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2.5 12s3.5-7 9.5-7 9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7Z"/><circle cx="12" cy="12" r="3"/></svg></a><a class="p-action" aria-label="Modifier {{ $record->name }}" title="Modifier" href="{{ route('workspace.resources.edit',[$resource,$record]) }}"><svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m14 5 5 5M4 20l4.2-.8L19 8.4 15.6 5 4.8 15.8 4 20Z"/></svg></a><form method="post" action="{{ route('workspace.resources.destroy',[$resource,$record]) }}" data-confirm-action="Supprimer cet élément ?">@csrf @method('DELETE')<button class="p-action text-red-600" aria-label="Supprimer {{ $record->name }}" title="Supprimer"><svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2m3 0-.8 14H5.8L5 6m4 4v6m6-6v6"/></svg></button></form></div></td>
                 </tr>
             @empty<tr><td colspan="6" class="px-6 py-16 text-center"><strong class="text-gray-800">Aucun résultat</strong><p class="mt-1 text-sm text-gray-500">Vos {{ $isProducts ? 'produits' : 'exploitations' }} apparaîtront ici après leur enregistrement.</p></td></tr>@endforelse
         </tbody></table></div>
@@ -81,6 +82,7 @@
     </section>
 </main>
 
+@if($showModal)
 <dialog id="producer-record-modal">
     <form method="post" enctype="multipart/form-data" action="{{ $modalRecord ? route('workspace.resources.update',[$resource,$modalRecord]) : route('workspace.resources.store',$resource) }}">
         @csrf @if($modalRecord) @method('PUT') @endif
@@ -112,6 +114,9 @@
                     <div class="p-field"><label for="farm-country">Pays *</label><input id="farm-country" name="country" required maxlength="100" value="{{ old('country',$modalRecord?->country ?? 'Tunisie') }}" placeholder="Tunisie"></div>
                     <div class="p-field"><label for="farm-method">Agriculture / pratique</label><input id="farm-method" name="farming_method" maxlength="120" value="{{ old('farming_method',$modalRecord?->farming_method) }}" placeholder="Biologique, raisonnée..."></div>
                     <div class="p-field"><label for="farm-area">Surface (hectares)</label><input id="farm-area" type="number" min="0" step="0.001" name="area_hectares" value="{{ old('area_hectares',$modalRecord?->area_hectares) }}" placeholder="12.5"></div>
+                    <div class="p-field sm:col-span-2"><strong class="text-sm">Coordonnées GPS pour les prévisions météo</strong><small class="mt-1 block text-gray-500">Renseignez la latitude et la longitude exactes de l’exploitation. Vous pouvez les retrouver sur une carte.</small></div>
+                    <div class="p-field"><label for="farm-latitude">Latitude</label><input id="farm-latitude" type="number" min="-90" max="90" step="0.0000001" name="latitude" value="{{ old('latitude',$modalRecord?->latitude) }}" placeholder="36.8065">@error('latitude')<small class="mt-1 block text-red-700">{{ $message }}</small>@enderror</div>
+                    <div class="p-field"><label for="farm-longitude">Longitude</label><input id="farm-longitude" type="number" min="-180" max="180" step="0.0000001" name="longitude" value="{{ old('longitude',$modalRecord?->longitude) }}" placeholder="10.1815">@error('longitude')<small class="mt-1 block text-red-700">{{ $message }}</small>@enderror</div>
                 </div>
                 <aside class="p-note"><strong>Relation : Exploitation et produits</strong><p class="mt-1 text-xs">Apr&egrave;s cr&eacute;ation de l’exploitation, rattachez chaque produit depuis son formulaire.</p></aside>
             @endif
@@ -132,4 +137,6 @@
     @if($showModal) modal.showModal(); @endif
 })();
 </script>
+@endif
+@include('traceability.partials.csv-import-dialog')
 @endsection

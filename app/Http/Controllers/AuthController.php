@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password as PasswordRule;
 use Laravel\Socialite\Facades\Socialite;
@@ -143,6 +144,7 @@ class AuthController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'min:2', 'max:120', "regex:/^[\pL\pM .'-]+$/u"],
             'role' => ['required', 'in:'.implode(',', User::PUBLIC_ROLES)],
+            'role_document' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:5120'],
             'phone' => ['required', 'regex:/^\d{8}$/', function (string $attribute, mixed $value, \Closure $fail) {
                 if (User::withTrashed()->where('phone', '+216'.$value)->exists()) {
                     $fail('Ce numéro de téléphone est déjà associé à un compte.');
@@ -156,12 +158,29 @@ class AuthController extends Controller
             return back()->withInput($request->except('password', 'password_confirmation'))->withErrors(['captcha' => $captchaError]);
         }
 
+        $roleDocument = $data['role_document'];
+        $documentPath = $roleDocument->store('role-verification', 'local');
+        if (! $documentPath) {
+            return back()->withInput($request->except('password', 'password_confirmation', 'role_document'))->withErrors(['role_document' => 'Le justificatif n’a pas pu être enregistré. Réessayez.']);
+        }
+
         try {
-            $user = DB::transaction(fn () => User::create([
-                'name' => trim($data['name']), 'email' => $data['email'], 'phone' => '+216'.$data['phone'],
-                'role' => $data['role'], 'status' => 'pending', 'password' => $data['password'], 'terms_accepted_at' => now(), 'terms_version' => '2026-10',
-            ]));
+            $user = DB::transaction(function () use ($data, $roleDocument, $documentPath) {
+                $user = User::create([
+                    'name' => trim($data['name']), 'email' => $data['email'], 'phone' => '+216'.$data['phone'],
+                    'role' => $data['role'], 'status' => 'pending', 'password' => $data['password'], 'terms_accepted_at' => now(), 'terms_version' => '2026-10',
+                ]);
+                $user->forceFill([
+                    'role_document_path' => $documentPath,
+                    'role_document_name' => mb_substr($roleDocument->getClientOriginalName(), 0, 255),
+                    'role_document_mime' => $roleDocument->getMimeType(),
+                    'role_document_uploaded_at' => now(),
+                ])->save();
+
+                return $user;
+            });
         } catch (UniqueConstraintViolationException $exception) {
+            Storage::disk('local')->delete($documentPath);
             $errors = [];
             if (User::withTrashed()->where('phone', '+216'.$data['phone'])->exists()) {
                 $errors['phone'] = 'Ce numéro de téléphone est déjà associé à un compte.';

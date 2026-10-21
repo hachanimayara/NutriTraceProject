@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Certification;
+use App\Models\ComplianceEvent;
 use App\Models\Distribution;
 use App\Models\EnvironmentalIndicator;
 use App\Models\Farm;
@@ -10,6 +11,7 @@ use App\Models\Lot;
 use App\Models\Product;
 use App\Models\Store;
 use App\Models\Transformation;
+use App\Services\TraceabilityCsvImportService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -21,14 +23,14 @@ use Illuminate\Validation\Rule;
 class TraceabilityController extends Controller
 {
     private const RESOURCES = [
-        'farms' => ['model' => Farm::class, 'label' => 'Exploitations agricoles', 'roles' => ['admin', 'producteur'], 'write_roles' => ['admin', 'producteur'], 'fields' => ['name', 'reference', 'location', 'country', 'farming_method', 'area_hectares', 'started_at', 'status', 'description']],
-        'products' => ['model' => Product::class, 'label' => 'Produits', 'roles' => ['admin', 'producteur'], 'write_roles' => ['admin', 'producteur'], 'fields' => ['name', 'reference', 'category', 'farm_id', 'origin', 'quantity', 'unit', 'status', 'description']],
-        'lots' => ['model' => Lot::class, 'label' => 'Lots', 'roles' => ['admin', 'producteur', 'transformateur', 'distributeur'], 'write_roles' => ['admin', 'producteur', 'transformateur'], 'fields' => ['product_id', 'code', 'quantity', 'unit', 'status', 'produced_at', 'expires_at', 'notes']],
-        'transformations' => ['model' => Transformation::class, 'label' => 'Transformations', 'roles' => ['admin', 'transformateur'], 'write_roles' => ['admin', 'transformateur'], 'fields' => ['reference', 'name', 'facility', 'performed_at', 'process_description', 'energy_kwh', 'water_liters', 'status', 'notes']],
-        'stores' => ['model' => Store::class, 'label' => 'Points de vente', 'roles' => ['admin', 'distributeur'], 'write_roles' => ['admin', 'distributeur'], 'fields' => ['name', 'reference', 'address', 'city', 'country', 'contact_name', 'phone', 'latitude', 'longitude', 'status']],
-        'distributions' => ['model' => Distribution::class, 'label' => 'Distributions', 'roles' => ['admin', 'distributeur'], 'write_roles' => ['admin', 'distributeur'], 'fields' => ['reference', 'lot_id', 'store_id', 'quantity_shipped', 'quantity_delivered', 'unit', 'shipped_at', 'expected_at', 'delivered_at', 'origin_name', 'origin_latitude', 'origin_longitude', 'status', 'notes']],
-        'certifications' => ['model' => Certification::class, 'label' => 'Certifications', 'roles' => ['admin', 'producteur'], 'write_roles' => ['admin', 'producteur'], 'fields' => ['title', 'scheme', 'certificate_number', 'issuer', 'farm_id', 'product_id', 'issued_at', 'expires_at', 'status', 'notes']],
-        'indicators' => ['model' => EnvironmentalIndicator::class, 'label' => 'Indicateurs environnementaux', 'roles' => ['admin', 'producteur', 'transformateur', 'distributeur'], 'write_roles' => ['admin', 'producteur', 'transformateur', 'distributeur'], 'fields' => ['stage', 'metric_code', 'name', 'value', 'unit', 'product_id', 'lot_id', 'method', 'measured_at', 'source_notes', 'status', 'validated_by', 'validated_at']],
+        'farms' => ['model' => Farm::class, 'label' => 'Exploitations agricoles', 'roles' => ['admin', 'producteur'], 'write_roles' => ['producteur'], 'fields' => ['name', 'reference', 'location', 'latitude', 'longitude', 'country', 'farming_method', 'area_hectares', 'started_at', 'status', 'description']],
+        'products' => ['model' => Product::class, 'label' => 'Produits', 'roles' => ['admin', 'producteur'], 'write_roles' => ['producteur'], 'fields' => ['name', 'reference', 'category', 'farm_id', 'origin', 'quantity', 'unit', 'status', 'description']],
+        'lots' => ['model' => Lot::class, 'label' => 'Lots', 'roles' => ['admin', 'producteur', 'transformateur', 'distributeur'], 'write_roles' => ['producteur', 'transformateur'], 'fields' => ['product_id', 'code', 'quantity', 'unit', 'status', 'produced_at', 'expires_at', 'notes']],
+        'transformations' => ['model' => Transformation::class, 'label' => 'Transformations', 'roles' => ['admin', 'transformateur'], 'write_roles' => ['transformateur'], 'fields' => ['reference', 'name', 'facility', 'performed_at', 'process_description', 'energy_kwh', 'water_liters', 'status', 'notes']],
+        'stores' => ['model' => Store::class, 'label' => 'Points de vente', 'roles' => ['admin', 'distributeur'], 'write_roles' => ['distributeur'], 'fields' => ['name', 'reference', 'address', 'city', 'country', 'contact_name', 'phone', 'latitude', 'longitude', 'status']],
+        'distributions' => ['model' => Distribution::class, 'label' => 'Distributions', 'roles' => ['admin', 'distributeur'], 'write_roles' => ['distributeur'], 'fields' => ['reference', 'lot_id', 'store_id', 'quantity_shipped', 'quantity_delivered', 'unit', 'shipped_at', 'expected_at', 'delivered_at', 'origin_name', 'origin_latitude', 'origin_longitude', 'status', 'notes']],
+        'certifications' => ['model' => Certification::class, 'label' => 'Certifications', 'roles' => ['admin', 'producteur', 'transformateur', 'distributeur'], 'write_roles' => ['admin'], 'fields' => ['title', 'scheme', 'certificate_number', 'issuer', 'farm_id', 'product_id', 'issued_at', 'expires_at', 'status', 'notes']],
+        'indicators' => ['model' => EnvironmentalIndicator::class, 'label' => 'Indicateurs environnementaux', 'roles' => ['admin', 'producteur', 'transformateur', 'distributeur'], 'write_roles' => ['admin'], 'fields' => ['stage', 'metric_code', 'name', 'value', 'unit', 'product_id', 'lot_id', 'method', 'measured_at', 'source_notes', 'status', 'validated_by', 'validated_at']],
     ];
 
     public function index(Request $request, string $resource)
@@ -58,7 +60,7 @@ class TraceabilityController extends Controller
 
         if (auth()->user()->role === 'producteur' && in_array($resource, ['farms', 'products'], true)) {
             $query->with($resource === 'farms' ? ['owner', 'products'] : ['farm']);
-            $records = $query->latest()->paginate(8)->withQueryString();
+            $records = $query->latest()->paginate(5)->withQueryString();
             $modalRecord = null;
             if ($request->query('modal') === 'edit' && $request->filled('record')) {
                 $modalQuery = clone $this->scopedQuery($resource, $config);
@@ -83,7 +85,7 @@ class TraceabilityController extends Controller
 
         if (auth()->user()->role === 'transformateur' && in_array($resource, ['lots', 'transformations'], true)) {
             $query->with($resource === 'lots' ? ['product', 'transformations'] : ['lots.product']);
-            $records = $query->latest()->paginate(8)->withQueryString();
+            $records = $query->latest()->paginate(5)->withQueryString();
             $modalRecord = $request->query('modal') === 'edit' && $request->filled('record')
                 ? (clone $this->scopedQuery($resource, $config))->with($resource === 'lots' ? ['product', 'transformations'] : ['lots.product'])->findOrFail($request->integer('record'))
                 : null;
@@ -102,7 +104,7 @@ class TraceabilityController extends Controller
         if (auth()->user()->role === 'distributeur' && in_array($resource, ['stores', 'distributions'], true)) {
             $relations = $resource === 'stores' ? ['distributions.lot.product'] : ['lot.product', 'store'];
             $query->with($relations);
-            $records = $query->latest()->paginate(8)->withQueryString();
+            $records = $query->latest()->paginate(5)->withQueryString();
             $modalRecord = $request->query('modal') === 'edit' && $request->filled('record')
                 ? (clone $this->scopedQuery($resource, $config))->with($relations)->findOrFail($request->integer('record'))
                 : null;
@@ -120,7 +122,7 @@ class TraceabilityController extends Controller
         if (auth()->user()->isAdmin() && in_array($resource, ['certifications', 'indicators'], true)) {
             $relations = $resource === 'certifications' ? ['product', 'farm', 'creator'] : ['product', 'lot.product', 'recorder'];
             $query->with($relations);
-            $records = $query->latest()->paginate(8)->withQueryString();
+            $records = $query->latest()->paginate(5)->withQueryString();
             $modalRecord = $request->query('modal') === 'edit' && $request->filled('record')
                 ? (clone $this->scopedQuery($resource, $config))->with($relations)->findOrFail($request->integer('record'))
                 : null;
@@ -136,7 +138,7 @@ class TraceabilityController extends Controller
             ]);
         }
 
-        $records = $query->latest()->paginate(12)->withQueryString();
+        $records = $query->latest()->paginate(5)->withQueryString();
 
         return view('traceability.index', ['resource' => $resource, 'config' => $config, 'records' => $records, 'categories' => $categories, 'stages' => $stages, 'statusOptions' => $statusOptions]);
     }
@@ -199,6 +201,7 @@ class TraceabilityController extends Controller
             $record = $config['model']::create($data);
             $this->syncTransformationLots($record, $resource, $request);
             if ($associatedProducts !== null) $this->syncFarmProducts($record, $associatedProducts);
+            if ($record instanceof Certification) ComplianceEvent::create(['certification_id' => $record->id, 'actor_id' => $request->user()->id, 'event' => 'certification.registered', 'to_status' => $record->status, 'note' => $record->notes, 'metadata' => ['certificate_number' => $record->certificate_number, 'scheme' => $record->scheme, 'expires_at' => $record->expires_at?->toDateString(), 'document_attached' => (bool) $record->document_path]]);
 
             return $record;
         });
@@ -218,6 +221,7 @@ class TraceabilityController extends Controller
         $config = $this->config($resource);
         $item = $this->scopedQuery($resource, $config)->findOrFail($record);
         $item->load($this->relations($resource));
+        if ($resource === 'certifications' && auth()->user()->isAdmin()) $item->load('complianceEvents');
 
         $data = ['resource' => $resource, 'config' => $config, 'record' => $item];
 
@@ -286,14 +290,21 @@ class TraceabilityController extends Controller
         $associatedProducts = $resource === 'farms' && auth()->user()->role === 'producteur' ? ($data['associated_products'] ?? []) : null;
         unset($data['associated_products']);
         $oldDocument = $resource === 'certifications' ? $item->document_path : null;
+        $oldCertificationStatus = $resource === 'certifications' ? $item->status : null;
+        $oldCertificationExpiry = $resource === 'certifications' ? $item->expires_at?->toDateString() : null;
         if ($resource === 'certifications' && $request->hasFile('document')) {
             $data['document_path'] = $request->file('document')->store('certifications');
         }
 
-        DB::transaction(function () use ($item, $data, $resource, $request, $associatedProducts) {
+        DB::transaction(function () use ($item, $data, $resource, $request, $associatedProducts, $oldCertificationStatus, $oldCertificationExpiry) {
             $item->update($data);
             $this->syncTransformationLots($item, $resource, $request);
             if ($associatedProducts !== null) $this->syncFarmProducts($item, $associatedProducts);
+            if ($item instanceof Certification) {
+                $renewed = $oldCertificationExpiry !== $item->expires_at?->toDateString() && $item->expires_at;
+                $event = $renewed ? 'certification.renewed' : ($oldCertificationStatus !== $item->status ? 'certification.reviewed' : 'certification.updated');
+                ComplianceEvent::create(['certification_id' => $item->id, 'actor_id' => $request->user()->id, 'event' => $event, 'from_status' => $oldCertificationStatus, 'to_status' => $item->status, 'note' => $data['notes'] ?? null, 'metadata' => ['certificate_number' => $item->certificate_number, 'old_expires_at' => $oldCertificationExpiry, 'expires_at' => $item->expires_at?->toDateString(), 'document_attached' => (bool) $item->document_path]]);
+            }
         });
         if ($oldDocument && isset($data['document_path'])) Storage::disk('local')->delete($oldDocument);
 
@@ -397,6 +408,16 @@ class TraceabilityController extends Controller
             'certifications' => ['title' => 'Certification', 'product.name' => 'Produit', 'issuer' => 'Organisme', 'expires_at' => 'Expiration', 'status' => 'Statut'],
             default => ['name' => 'Indicateur', 'product.name' => 'Produit', 'value' => 'Valeur', 'unit' => 'Unite', 'method' => 'Methode', 'measured_at' => 'Date de mesure'],
         };
+        $columns += match ($resource) {
+            'farms' => ['associated_products' => 'associated_products'],
+            'products' => ['farm_id' => 'farm_id'],
+            'lots' => ['product_id' => 'product_id'],
+            'transformations' => ['input_lots' => 'input_lots', 'output_lots' => 'output_lots'],
+            'distributions' => ['lot_id' => 'lot_id', 'store_id' => 'store_id'],
+            'certifications' => ['farm_id' => 'farm_id', 'product_id' => 'product_id'],
+            'indicators' => ['product_id' => 'product_id', 'lot_id' => 'lot_id'],
+            default => [],
+        };
 
         return response()->streamDownload(function () use ($records, $columns) {
             $output = fopen('php://output', 'w');
@@ -405,13 +426,92 @@ class TraceabilityController extends Controller
             foreach ($records as $record) {
                 $row = [];
                 foreach (array_keys($columns) as $field) {
-                    $value = data_get($record, $field, '');
+                    $value = match ($field) {
+                        'associated_products' => $record->products->pluck('id')->implode('|'),
+                        'input_lots' => $record->lots->where('pivot.direction', 'input')->pluck('id')->implode('|'),
+                        'output_lots' => $record->lots->where('pivot.direction', 'output')->pluck('id')->implode('|'),
+                        default => data_get($record, $field, ''),
+                    };
                     $row[] = $value instanceof \DateTimeInterface ? $value->format('Y-m-d H:i:s') : $value;
                 }
                 fputcsv($output, $row, ';');
             }
             fclose($output);
         }, $resource.'-nutritrace.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
+    public function importPage(string $resource)
+    {
+        $config = $this->config($resource);
+        $this->assertCanWrite($config);
+        $preview = session('traceability_csv_preview');
+        if (($preview['resource'] ?? null) !== $resource) $preview = null;
+        if (request()->boolean('popup')) {
+            return view('traceability.csv-import-popup', compact('resource', 'config', 'preview'));
+        }
+
+        return view('traceability.csv-import', compact('resource', 'config', 'preview'));
+    }
+
+    public function analyzeImport(Request $request, string $resource, TraceabilityCsvImportService $importer)
+    {
+        $config = $this->config($resource);
+        $this->assertCanWrite($config);
+        $validated = $request->validate(['file' => ['required', 'file', 'mimes:csv,txt', 'max:1024']]);
+        $fields = $config['fields'];
+        if ($resource === 'farms') $fields[] = 'associated_products';
+        if ($resource === 'transformations') array_push($fields, 'input_lots', 'output_lots');
+        $preview = $importer->analyze($validated['file'], $resource, $fields);
+        if (! $preview['compatible']) {
+            return back()->withErrors(['file' => $preview['error'] ?: 'Ce fichier CSV ne correspond pas à cette gestion.']);
+        }
+        foreach ($preview['rows'] as &$row) {
+            try {
+                $this->validated(new Request($row['data']), $resource, $config);
+            } catch (\Illuminate\Validation\ValidationException $exception) {
+                foreach ($exception->errors() as $messages) {
+                    array_push($row['issues'], ...$messages);
+                }
+            }
+            $row['issues'] = array_values(array_unique($row['issues']));
+            $row['status'] = $row['issues'] ? 'À corriger ou compléter' : 'Valide · à confirmer';
+        }
+        unset($row);
+        session(['traceability_csv_preview' => ['resource' => $resource] + $preview]);
+
+        return redirect()->route('workspace.resources.import', ['resource' => $resource, 'popup' => 1])->with('status', 'Analyse terminée. Aucune donnée n’a été enregistrée.');
+    }
+
+    public function useImportRow(Request $request, string $resource)
+    {
+        $config = $this->config($resource);
+        $this->assertCanWrite($config);
+        $validated = $request->validate(['row' => ['required', 'integer', 'min:0', 'max:99']]);
+        $preview = session('traceability_csv_preview');
+        abort_unless(($preview['resource'] ?? null) === $resource && isset($preview['rows'][$validated['row']]), 404);
+        $data = $preview['rows'][$validated['row']]['data'];
+        session()->forget('traceability_csv_preview');
+
+        return redirect()->route('workspace.resources.index', ['resource' => $resource, 'modal' => 'create'])
+            ->withInput($data)->with('status', 'Données chargées dans le formulaire. Vérifiez-les et complétez les champs avant de les enregistrer.');
+    }
+
+    public function importTemplate(string $resource, TraceabilityCsvImportService $importer)
+    {
+        $config = $this->config($resource);
+        $this->assertCanWrite($config);
+        $fields = $config['fields'];
+        $fields = array_values(array_diff($fields, ['validated_by', 'validated_at']));
+        if ($resource === 'farms') $fields[] = 'associated_products';
+        if ($resource === 'transformations') array_push($fields, 'input_lots', 'output_lots');
+        $headers = $importer->templateHeaders($fields);
+
+        return response()->streamDownload(function () use ($headers): void {
+            $output = fopen('php://output', 'w');
+            fwrite($output, "\xEF\xBB\xBF");
+            fputcsv($output, $headers, ';');
+            fclose($output);
+        }, $resource.'-modele-nutritrace.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
     }
 
     private function config(string $resource): array
@@ -435,6 +535,13 @@ class TraceabilityController extends Controller
         $user = auth()->user();
         if ($user->isAdmin()) {
             return $query;
+        }
+
+        if ($resource === 'indicators' && in_array($user->role, ['transformateur', 'distributeur'], true)) {
+            return $query->whereHas('recorder', fn (Builder $recorder) => $recorder->where('role', 'admin'));
+        }
+        if ($resource === 'certifications' && in_array($user->role, ['transformateur', 'distributeur'], true)) {
+            return $query->whereHas('creator', fn (Builder $creator) => $creator->where('role', 'admin'));
         }
 
         return match ($resource) {
@@ -471,16 +578,25 @@ class TraceabilityController extends Controller
             $storeExists->where('user_id', auth()->id());
         }
         $rules = match ($resource) {
-            'farms' => ['name' => ['required', 'string', 'max:160'], 'reference' => ['required', 'string', 'max:80', $unique('farms')], 'location' => ['required', 'string', 'max:190'], 'country' => ['required', 'string', 'max:100'], 'farming_method' => ['nullable', 'string', 'max:120'], 'area_hectares' => ['nullable', 'numeric', 'min:0'], 'started_at' => ['nullable', 'date'], 'description' => ['nullable', 'string', 'max:5000'], 'status' => ['sometimes', Rule::in(['active', 'review'])], 'document' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'], 'associated_products' => ['nullable', 'array'], 'associated_products.*' => ['integer', Rule::exists('products', 'id')->where('user_id', auth()->id())]],
+            'farms' => ['name' => ['required', 'string', 'max:160'], 'reference' => ['required', 'string', 'max:80', $unique('farms')], 'location' => ['required', 'string', 'max:190'], 'latitude' => ['nullable', 'required_with:longitude', 'numeric', 'between:-90,90'], 'longitude' => ['nullable', 'required_with:latitude', 'numeric', 'between:-180,180'], 'country' => ['required', 'string', 'max:100'], 'farming_method' => ['nullable', 'string', 'max:120'], 'area_hectares' => ['nullable', 'numeric', 'min:0'], 'started_at' => ['nullable', 'date'], 'description' => ['nullable', 'string', 'max:5000'], 'status' => ['sometimes', Rule::in(['active', 'review'])], 'document' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'], 'associated_products' => ['nullable', 'array'], 'associated_products.*' => ['integer', Rule::exists('products', 'id')->where('user_id', auth()->id())]],
             'products' => ['name' => ['required', 'string', 'max:160'], 'reference' => ['required', 'string', 'max:80', $unique('products')], 'category' => ['required', 'string', 'max:100'], 'farm_id' => ['nullable', $farmExists], 'origin' => ['nullable', 'string', 'max:190'], 'quantity' => ['nullable', 'numeric', 'min:0'], 'unit' => ['required', 'string', 'max:24'], 'status' => ['required', Rule::in(['draft', 'published', 'archived'])], 'description' => ['nullable', 'string', 'max:5000'], 'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'], 'remove_image' => ['nullable', 'boolean']],
             'lots' => ['product_id' => ['required', $productExists], 'code' => ['required', 'string', 'max:80', $unique('lots', 'code')], 'quantity' => ['required', 'numeric', 'gt:0'], 'unit' => ['required', 'string', 'max:24'], 'status' => ['required', Rule::in(['active', 'blocked', 'completed'])], 'produced_at' => ['nullable', 'date'], 'expires_at' => ['nullable', 'date', 'after_or_equal:produced_at'], 'notes' => ['nullable', 'string', 'max:5000'], 'document' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120']],
             'transformations' => ['reference' => ['required', 'string', 'max:80', $unique('transformations')], 'name' => ['required', 'string', 'max:160'], 'facility' => ['nullable', 'string', 'max:190'], 'performed_at' => ['required', 'date'], 'process_description' => ['nullable', 'string', 'max:5000'], 'energy_kwh' => ['nullable', 'numeric', 'min:0'], 'water_liters' => ['nullable', 'numeric', 'min:0'], 'status' => ['required', Rule::in(['recorded', 'review'])], 'notes' => ['nullable', 'string', 'max:5000'], 'input_lots' => ['required', 'array', 'min:1'], 'input_lots.*' => ['required', 'integer', Rule::exists('lots', 'id')->where('status', 'active')], 'output_lots' => ['nullable', 'array'], 'output_lots.*' => ['required', 'integer', Rule::exists('lots', 'id')->where('status', 'active')], 'document' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120']],
             'stores' => ['name' => ['required', 'string', 'max:160'], 'reference' => ['required', 'string', 'max:80', $unique('stores')], 'address' => ['required', 'string', 'max:255'], 'city' => ['nullable', 'string', 'max:120'], 'country' => ['required', 'string', 'max:100'], 'contact_name' => ['nullable', 'string', 'max:160'], 'phone' => ['nullable', 'string', 'max:32'], 'latitude' => ['nullable', 'required_with:longitude', 'numeric', 'between:-90,90'], 'longitude' => ['nullable', 'required_with:latitude', 'numeric', 'between:-180,180'], 'status' => ['required', Rule::in(['active', 'inactive'])]],
-            'distributions' => ['reference' => ['required', 'string', 'max:80', $unique('distributions')], 'lot_id' => ['required', Rule::exists('lots', 'id')->where('status', 'active')], 'store_id' => ['required', $storeExists], 'quantity_shipped' => ['required', 'numeric', 'gt:0'], 'quantity_delivered' => ['nullable', 'numeric', 'min:0', 'lte:quantity_shipped'], 'unit' => ['required', 'string', 'max:24'], 'shipped_at' => ['nullable', 'date'], 'expected_at' => ['nullable', 'date'], 'delivered_at' => ['nullable', 'date'], 'origin_name' => ['nullable', 'string', 'max:190'], 'origin_latitude' => ['nullable', 'required_with:origin_longitude', 'numeric', 'between:-90,90'], 'origin_longitude' => ['nullable', 'required_with:origin_latitude', 'numeric', 'between:-180,180'], 'status' => ['required', Rule::in(['planned', 'in_transit', 'delivered', 'delayed', 'cancelled'])], 'notes' => ['nullable', 'string', 'max:5000']],
-            'certifications' => ['title' => ['required', 'string', 'max:160'], 'scheme' => ['required', 'string', 'max:120'], 'certificate_number' => ['required', 'string', 'max:100', $unique('certifications', 'certificate_number')], 'issuer' => ['required', 'string', 'max:160'], 'farm_id' => ['nullable', $farmExists], 'product_id' => ['nullable', $productExists], 'issued_at' => ['nullable', 'date'], 'expires_at' => ['nullable', 'date', 'after_or_equal:issued_at'], 'status' => ['required', Rule::in(['pending', 'valid', 'expired', 'rejected'])], 'document' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'], 'notes' => ['nullable', 'string', 'max:5000']],
+            'distributions' => ['reference' => ['required', 'string', 'max:80', $unique('distributions')], 'lot_id' => ['required', Rule::exists('lots', 'id')->where('status', 'active')], 'store_id' => ['required', $storeExists], 'quantity_shipped' => ['required', 'numeric', 'gt:0', 'max:99999999999'], 'quantity_delivered' => ['nullable', 'numeric', 'min:0', 'lte:quantity_shipped', 'max:99999999999'], 'unit' => ['required', 'string', 'max:24'], 'shipped_at' => ['nullable', 'date'], 'expected_at' => ['nullable', 'date', Rule::when($request->filled('shipped_at'), ['after_or_equal:shipped_at'])], 'delivered_at' => ['nullable', 'date', Rule::when($request->filled('shipped_at'), ['after_or_equal:shipped_at'])], 'origin_name' => ['nullable', 'string', 'max:190'], 'origin_latitude' => ['nullable', 'required_with:origin_longitude', 'numeric', 'between:-90,90'], 'origin_longitude' => ['nullable', 'required_with:origin_latitude', 'numeric', 'between:-180,180'], 'status' => ['required', Rule::in(['planned', 'in_transit', 'delivered', 'delayed', 'cancelled'])], 'notes' => ['nullable', 'string', 'max:5000']],
+            'certifications' => ['title' => ['required', 'string', 'max:160'], 'scheme' => ['required', 'string', 'max:120'], 'certificate_number' => ['required', 'string', 'max:100', $unique('certifications', 'certificate_number')], 'issuer' => ['required', 'string', 'max:160'], 'farm_id' => ['nullable', $farmExists], 'product_id' => ['nullable', $productExists], 'issued_at' => ['nullable', 'date', 'before_or_equal:today'], 'expires_at' => ['nullable', 'date', 'after_or_equal:issued_at'], 'status' => ['required', Rule::in(['pending', 'valid', 'expired', 'rejected'])], 'document' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'], 'notes' => ['nullable', 'string', 'max:5000']],
             'indicators' => ['stage' => ['required', 'string', 'max:80'], 'metric_code' => ['required', 'string', 'max:80'], 'name' => ['required', 'string', 'max:160'], 'value' => ['required', 'numeric'], 'unit' => ['required', 'string', 'max:32'], 'product_id' => ['nullable', $productExists], 'lot_id' => ['nullable', Rule::exists('lots', 'id')], 'method' => ['nullable', 'string', 'max:190'], 'measured_at' => ['nullable', 'date'], 'source_notes' => ['nullable', 'string', 'max:5000'], 'status' => $indicatorStatusRule],
         };
-        $data = $request->validate($rules);
+        $messages = [
+            'exists' => 'Veuillez sélectionner une option valide.',
+            'unique' => 'Cette référence existe déjà.',
+            'after_or_equal' => 'Cette date doit être postérieure ou égale à la date d’expédition.',
+            'lte' => 'La quantité livrée ne peut pas dépasser la quantité expédiée.',
+            'gt' => 'La quantité doit être supérieure à zéro.',
+            'mimes' => 'Le fichier doit être au format PDF, JPG ou PNG.',
+            'max.file' => 'Le fichier ne peut pas dépasser 5 Mo.',
+        ];
+        $data = $request->validate($rules, $messages);
         if ($resource === 'farms') $data['status'] = $data['status'] ?? 'active';
         if ($resource === 'certifications' && (bool) ($data['farm_id'] ?? null) === (bool) ($data['product_id'] ?? null)) {
             throw \Illuminate\Validation\ValidationException::withMessages(['farm_id' => 'Associez la certification a une exploitation ou a un produit, mais pas aux deux.']);

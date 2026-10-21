@@ -50,8 +50,9 @@
     <nav class="flex items-center gap-2 text-xs text-gray-500"><a href="{{ auth()->user()->getDashboardUrl() }}" class="hover:text-green-800">Tableau de bord</a><span>›</span><span>{{ $title }}</span></nav>
     <header class="flex flex-wrap items-center justify-between gap-4">
         <div><p class="text-xs font-semibold uppercase tracking-[.14em] text-green-800">Espace transformateur</p><h1 class="mt-2 text-3xl font-semibold tracking-tight text-gray-900">{{ $title }}</h1><p class="mt-2 text-sm text-gray-500">{{ $isLots ? 'Retracez les lots entrants, sortants et leurs filiations.' : 'Contrôlez les opérations, les rendements et les lots associés.' }}</p></div>
-        <div class="flex gap-3"><a href="{{ route('workspace.resources.export', $resource) }}" class="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-800 hover:bg-gray-50"><span aria-hidden="true">↓</span> Exporter</a><button type="button" data-open-transformer-modal class="inline-flex items-center gap-2 rounded-xl bg-green-800 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-green-900/10 hover:bg-green-900"><span aria-hidden="true">ï¼‹</span> Ajouter {{ $isLots ? 'un lot' : 'une transformation' }}</button></div>
+        <div class="flex gap-3"><a href="{{ route('workspace.resources.export', $resource) }}" class="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-800 hover:bg-gray-50"><span aria-hidden="true">↓</span> Exporter</a><a href="{{ route('workspace.resources.index', ['resource' => $resource, 'modal' => 'create']) }}" class="rounded-xl bg-green-800 px-5 py-3 text-sm font-semibold text-white">＋ Ajouter {{ $isLots ? 'un lot' : 'une transformation' }}</a></div>
     </header>
+    <div class="-mt-3 flex justify-end"><button type="button" data-open-csv-import="{{ route('workspace.resources.import', ['resource' => $resource, 'popup' => 1]) }}" class="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-800 hover:bg-gray-50">Importer CSV</button></div>
 
     @if(session('status'))<div class="rounded-xl border border-green-200 bg-green-50 p-4 text-sm font-medium text-green-900" role="status">{{ session('status') }}</div>@endif
     @if($errors->any())<div class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">Vérifiez les champs signalés dans le formulaire.</div>@endif
@@ -69,7 +70,7 @@
         <div class="overflow-x-auto"><table class="w-full min-w-[900px] text-left"><thead><tr>
             @if($isLots)<th>N° de lot</th><th>Produit</th><th>Transformation</th><th>Quantité</th><th>Statut</th>
             @else<th>Référence</th><th>Opération</th><th>Produit</th><th>Rendement</th><th>Statut</th>@endif
-            <th class="text-right">Actions</th>
+            <th class="text-right">Détails</th>
         </tr></thead><tbody>
             @forelse($records as $record)
                 @php
@@ -90,7 +91,7 @@
                     @if($isLots)<td><a class="font-semibold text-gray-900 hover:text-green-800" data-detail-popup href="{{ route('workspace.resources.show',[$resource,$record]) }}">{{ $record->code }}</a></td><td class="text-gray-600">{{ $record->product?->name ?? '—' }}</td><td class="text-gray-600">{{ $relatedTransformation?->reference ?? '—' }}</td><td class="text-gray-600">{{ number_format((float)$record->quantity,3,',',' ') }} {{ $record->unit }}</td>
                     @else<td><a class="font-semibold text-gray-900 hover:text-green-800" data-detail-popup href="{{ route('workspace.resources.show',[$resource,$record]) }}">{{ $record->reference }}</a></td><td class="text-gray-600">{{ $record->name }}</td><td class="text-gray-600">{{ $productNames ?: '—' }}</td><td class="text-gray-600">{{ $yield }}</td>@endif
                     <td><span class="t-badge {{ in_array($record->status,['review','blocked'])?'review':'' }}"><i class="h-1.5 w-1.5 rounded-full bg-current"></i>{!! mb_encode_numericentity($rowStatus, [0x80, 0x10FFFF, 0, 0x1FFFFF], 'UTF-8') !!}</span></td>
-                    <td><div class="flex justify-end gap-2"><a class="t-action" aria-label="Voir" title="Voir" data-detail-popup href="{{ route('workspace.resources.show',[$resource,$record]) }}"><svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="10.8" cy="10.8" r="6.5"/><path d="m16 16 4.5 4.5"/></svg></a>@if($canManage)<a class="t-action" aria-label="Modifier" title="Modifier" href="{{ route('workspace.resources.edit',[$resource,$record]) }}"><svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m14 5 5 5M4 20l4.2-.8L19 8.4 15.6 5 4.8 15.8 4 20Z"/></svg></a><form method="post" action="{{ route('workspace.resources.destroy',[$resource,$record]) }}" data-confirm-action="Supprimer cet élément ?">@csrf @method('DELETE')<button class="t-action" aria-label="Supprimer" title="Supprimer"><svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 14h10l1-14M9 7V4h6v3"/></svg></button></form>@endif</div></td>
+                    <td><div class="flex justify-end gap-2"><a class="t-action" aria-label="Voir" title="Voir" data-detail-popup href="{{ route('workspace.resources.show',[$resource,$record]) }}"><svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2.5 12s3.5-7 9.5-7 9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7Z"/><circle cx="12" cy="12" r="3"/></svg></a>@if($canManage)<a class="t-action" aria-label="Modifier" title="Modifier" href="{{ route('workspace.resources.edit',[$resource,$record]) }}"><svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m14 5 5 5M4 20l4.2-.8L19 8.4 15.6 5 4.8 15.8 4 20Z"/></svg></a><form method="post" action="{{ route('workspace.resources.destroy',[$resource,$record]) }}" data-confirm-action="Supprimer cet élément ?">@csrf @method('DELETE')<button class="t-action text-red-600" aria-label="Supprimer" title="Supprimer"><svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2m3 0-.8 14H5.8L5 6m4 4v6m6-6v6"/></svg></button></form>@endif</div></td>
                 </tr>
             @empty<tr><td colspan="6" class="px-6 py-16 text-center"><strong class="text-gray-800">Aucun résultat</strong><p class="mt-1 text-sm text-gray-500">Vos {{ mb_strtolower($title) }} apparaîtront ici après leur enregistrement.</p></td></tr>@endforelse
         </tbody></table></div>
@@ -98,6 +99,7 @@
     </section>
 </main>
 
+@if($showModal)
 <dialog id="transformer-record-modal" aria-labelledby="transformer-modal-title">
     <form method="post" enctype="multipart/form-data" action="{{ $editing ? route('workspace.resources.update',[$resource,$modalRecord]) : route('workspace.resources.store',$resource) }}">
         @csrf @if($editing) @method('PUT') @endif
@@ -158,4 +160,6 @@
     @if($showModal) modal.showModal(); @endif
 })();
 </script>
+@endif
+@include('traceability.partials.csv-import-dialog')
 @endsection

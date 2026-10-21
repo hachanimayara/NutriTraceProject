@@ -184,7 +184,7 @@
             <!-- app header start -->
             @include('layouts.app-header')
             <!-- app header end -->
-            <div class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
+            <div class="admin-page-content p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
                 @yield('content')
             </div>
         </div>
@@ -261,7 +261,7 @@
             if (!dialog || !content) return;
 
             document.addEventListener('click', async (event) => {
-                const link = event.target.closest('a[data-detail-popup]');
+                const link = event.target.closest('a[data-detail-popup], a[href*="/admin/product-ratings/"]');
                 if (!link || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
 
                 event.preventDefault();

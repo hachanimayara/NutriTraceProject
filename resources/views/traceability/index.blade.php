@@ -8,7 +8,8 @@
         <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Suivez les informations et les relations de votre chaîne de traçabilité.</p>
     </div>
     @if(in_array(auth()->user()->role, $config['write_roles'], true))
-        <a href="{{ route('workspace.resources.create', $resource) }}" class="inline-flex items-center gap-2 rounded-xl bg-green-800 px-5 py-3 text-sm font-semibold text-white shadow hover:bg-green-900"><span aria-hidden="true">ï¼‹</span> Ajouter</a>
+        <button type="button" data-open-csv-import="{{ route('workspace.resources.import', ['resource' => $resource, 'popup' => 1]) }}" class="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-800 hover:bg-gray-50">Importer CSV</button>
+        <a href="{{ route('workspace.resources.create', $resource) }}" class="inline-flex items-center gap-2 rounded-xl bg-green-800 px-5 py-3 text-sm font-semibold text-white shadow hover:bg-green-900"><span aria-hidden="true">＋</span> Ajouter</a>
     @endif
 </div>
 
@@ -25,7 +26,7 @@
     </form>
     <div class="overflow-x-auto">
         <table class="w-full min-w-[760px] text-left text-sm">
-            <thead class="bg-gray-50 text-[11px] uppercase tracking-wide text-gray-500 dark:bg-gray-900/60"><tr><th class="px-5 py-3">Élément</th><th class="px-5 py-3">Référence / relation</th><th class="px-5 py-3">Donnée principale</th><th class="px-5 py-3">Statut</th><th class="px-5 py-3">Mise à jour</th><th class="px-5 py-3 text-right">Action</th></tr></thead>
+            <thead class="bg-gray-50 text-[11px] uppercase tracking-wide text-gray-500 dark:bg-gray-900/60"><tr><th class="px-5 py-3">Élément</th><th class="px-5 py-3">Référence / relation</th><th class="px-5 py-3">Donnée principale</th><th class="px-5 py-3">Statut</th><th class="px-5 py-3">Mise à jour</th><th class="px-5 py-3 text-right">Actions</th></tr></thead>
             <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
                 @forelse($records as $record)
                     @php
@@ -40,7 +41,7 @@
                         <td class="px-5 py-4 text-gray-600 dark:text-gray-300">{{ $detail ?: '—' }}</td>
                         <td class="px-5 py-4"><span class="rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-800">{{ str_replace('_', ' ', ucfirst($status)) }}</span></td>
                         <td class="px-5 py-4 text-xs text-gray-500">{{ $record->updated_at?->format('d/m/Y') }}</td>
-                        <td class="px-5 py-4 text-right"><a class="font-semibold text-green-800 hover:underline" data-detail-popup href="{{ route('workspace.resources.show', [$resource, $record]) }}">Détails →</a></td>
+                        <td class="px-5 py-4 text-right"><div class="inline-flex items-center justify-end gap-2"><a class="grid h-9 w-9 place-items-center rounded-lg border border-gray-200 text-green-800 hover:bg-green-50" aria-label="Voir les détails" title="Voir les détails" data-detail-popup href="{{ route('workspace.resources.show', [$resource, $record]) }}"><svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2.5 12s3.5-7 9.5-7 9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7Z"/><circle cx="12" cy="12" r="3"/></svg></a>@if(in_array(auth()->user()->role, $config['write_roles'], true))<a class="grid h-9 w-9 place-items-center rounded-lg border border-gray-200 text-blue-700 hover:bg-blue-50" aria-label="Modifier" title="Modifier" href="{{ route('workspace.resources.edit', [$resource, $record]) }}"><svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m14 5 5 5M4 20l4.2-.8L19 8.4 15.6 5 4.8 15.8 4 20Z"/></svg></a><form method="post" action="{{ route('workspace.resources.destroy', [$resource, $record]) }}" data-confirm-action="Supprimer cet élément ?">@csrf @method('DELETE')<button type="submit" class="grid h-9 w-9 place-items-center rounded-lg border border-red-200 text-red-700 hover:bg-red-50" aria-label="Supprimer" title="Supprimer"><svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2m3 0-.8 14H5.8L5 6m4 4v6m6-6v6"/></svg></button></form>@endif</div></td>
                     </tr>
                 @empty
                     <tr><td colspan="6" class="px-5 py-14 text-center"><p class="font-semibold text-gray-800 dark:text-white">Aucun résultat</p><p class="mt-1 text-sm text-gray-500">Les enregistrements créés apparaîtront ici.</p></td></tr>
@@ -50,4 +51,5 @@
     </div>
     <x-pagination :paginator="$records" />
 </section>
+@include('traceability.partials.csv-import-dialog')
 @endsection

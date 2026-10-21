@@ -1,0 +1,12 @@
+.nt-required-marker { color: #b42318; font-weight: 700; }
+.nt-invalid,
+form :is(label, .field, .t-field, .profile-field):has(.error:not([hidden]), [data-validation-error]:not([hidden]), .text-red-700:not([hidden]), .nt-client-error) :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+  border-color: #dc2626 !important;
+  box-shadow: 0 0 0 1px #dc262633;
+}
+.nt-invalid:focus,
+form :is(label, .field, .t-field, .profile-field):has(.error:not([hidden]), [data-validation-error]:not([hidden]), .text-red-700:not([hidden]), .nt-client-error) :is(input, select, textarea):focus {
+  outline-color: #dc2626;
+  box-shadow: 0 0 0 3px #dc26261a;
+}
+.nt-client-error { display: block; margin-top: .3rem; color: #b42318; font-size: .8rem; line-height: 1.35; }
