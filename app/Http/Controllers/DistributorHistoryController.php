@@ -48,7 +48,7 @@ class DistributorHistoryController extends Controller
         }
 
         return view('traceability.distributor-history', [
-            'records' => $query->orderByRaw('COALESCE(delivered_at, shipped_at, created_at) DESC')->orderByDesc('id')->paginate(5)->withQueryString(),
+            'records' => $query->orderByRaw('COALESCE(delivered_at, shipped_at, created_at) DESC')->orderByDesc('id')->paginate(12)->withQueryString(),
             'stats' => [
                 'total' => (clone $base)->count(),
                 'delivered' => (clone $base)->where('status', 'delivered')->count(),

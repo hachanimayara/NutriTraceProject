@@ -14,6 +14,22 @@
     @if(session('status'))<div role="status" class="rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-900">{{ session('status') }}</div>@endif
     @if($errors->any())<div role="alert" class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">{{ $errors->first() }}</div>@endif
     @if($message)<div role="status" class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">{{ $message }}</div>@endif
+    @if($message && str_contains($message, 'limite temporairement'))
+        <div class="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">Open Food Facts limite temporairement les recherches. <button type="button" class="ml-2 font-semibold underline" data-open-manual-dialog>Saisie manuelle</button></div>
+        <dialog id="manual-entry-dialog" class="w-full max-w-xl rounded-2xl p-0 shadow-2xl">
+            <form method="post" action="{{ route('workspace.open-food-facts.import') }}" class="space-y-4 p-6">
+                @csrf<input type="hidden" name="manual_mode" value="1">
+                <h2 class="text-xl font-semibold">Saisie manuelle</h2>
+                <label class="block text-sm">Nom du produit<input required name="manual[name]" class="mt-1 w-full rounded-lg border border-gray-300 p-3"></label>
+                <label class="block text-sm">Marque<input name="manual[brands]" class="mt-1 w-full rounded-lg border border-gray-300 p-3"></label>
+                <label class="block text-sm">Catégorie<input name="manual[categories]" class="mt-1 w-full rounded-lg border border-gray-300 p-3"></label>
+                <label class="block text-sm">Quantité / conditionnement<input name="manual[quantity]" class="mt-1 w-full rounded-lg border border-gray-300 p-3"></label>
+                <label class="block text-sm">Ingrédients<textarea name="manual[ingredients]" class="mt-1 w-full rounded-lg border border-gray-300 p-3"></textarea></label>
+                <label class="block text-sm">Code-barres (facultatif)<input name="barcode" inputmode="numeric" pattern="[0-9]{8,14}" class="mt-1 w-full rounded-lg border border-gray-300 p-3"></label>
+                <div class="flex justify-end gap-3"><button type="button" class="rounded-lg border px-4 py-2" data-close-manual-dialog>Annuler</button><button class="rounded-lg bg-green-800 px-4 py-2 font-semibold text-white">Enregistrer</button></div>
+            </form>
+        </dialog>
+    @endif
 
     <section class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-7">
         <h2 class="text-lg font-semibold">Rechercher dans le catalogue</h2>
@@ -85,5 +101,7 @@ document.querySelectorAll('#off-import-form').forEach(form => form.addEventListe
     const selected = [...form.querySelectorAll('input[name="fields[]"]:checked')];
     if (!selected.length) { event.preventDefault(); alert('Sélectionnez au moins un champ à importer.'); return; }
 }));
+document.querySelector('[data-open-manual-dialog]')?.addEventListener('click', () => document.querySelector('#manual-entry-dialog')?.showModal());
+document.querySelector('[data-close-manual-dialog]')?.addEventListener('click', () => document.querySelector('#manual-entry-dialog')?.close());
 </script>
 @endsection

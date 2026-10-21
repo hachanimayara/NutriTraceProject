@@ -99,7 +99,7 @@
         @if($ratings->isNotEmpty())
             <div class="ct-rating-list">
                 @foreach($ratings as $rating)
-                    <article class="ct-rating-item"><header><span class="ct-rating-stars" aria-label="{{ $rating->rating }} sur 5">{{ str_repeat('★', $rating->rating) }}{{ str_repeat('☆', 5 - $rating->rating) }}</span><time>{{ $rating->created_at?->format('d/m/Y') }}</time></header>@if($rating->comment)<p>{{ $rating->comment }}</p>@endif</article>
+                    <article class="ct-rating-item"><header><span class="ct-rating-stars" aria-label="{{ $rating->rating }} sur 5">{{ str_repeat('★', $rating->rating) }}{{ str_repeat('☆', 5 - $rating->rating) }}</span><time>{{ $rating->created_at?->format('d/m/Y') }}</time></header><p>{{ $rating->consumer?->name ?? $rating->consumer_name ?? 'Visiteur' }}</p>@if($rating->comment)<p>{{ $rating->comment }}</p>@endif</article>
                 @endforeach
             </div>
             <div class="mt-5">{{ $ratings->links() }}</div>
