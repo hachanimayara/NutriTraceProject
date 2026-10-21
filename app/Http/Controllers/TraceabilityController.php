@@ -316,6 +316,9 @@ class TraceabilityController extends Controller
 
         DB::transaction(function () use ($item, $data, $resource, $request, $associatedProducts, $oldCertificationStatus, $oldCertificationExpiry) {
             $item->update($data);
+            if ($item instanceof Certification) {
+                $item->refresh();
+            }
             $this->syncTransformationLots($item, $resource, $request);
             if ($associatedProducts !== null) {
                 $this->syncFarmProducts($item, $associatedProducts);
@@ -653,7 +656,7 @@ class TraceabilityController extends Controller
         if ($resource === 'indicators' && empty($data['product_id']) && empty($data['lot_id'])) {
             throw ValidationException::withMessages(['product_id' => 'Associez cet indicateur a un produit ou a un lot.']);
         }
-        if ($resource === 'certifications') {
+        if ($resource === 'certifications' && ($id === null || ! auth()->user()->isAdmin())) {
             $data['status'] = 'pending';
         }
         if ($resource === 'indicators') {
