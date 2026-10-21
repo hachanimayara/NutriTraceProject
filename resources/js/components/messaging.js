@@ -18,7 +18,7 @@ const relativeDate = (value) => {
     if (elapsed < 86_400_000) return `il y a ${Math.floor(elapsed / 3_600_000)} h`;
     return formatDate(value, { day: '2-digit', month: '2-digit' });
 };
-const makeUuid = () => window.crypto?.randomUUID?.() || 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => { const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16); });
+const makeUuid = () => window.crypto?.randomUUID?.() || 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => { const randomNibble = Math.trunc(Math.random() * 16); return (c === 'x' ? randomNibble : (randomNibble % 4) + 8).toString(16); });
 
 function avatarMarkup(person, sizeClass = '') {
     const image = person?.avatar_url ? `<img src="${escapeHtml(person.avatar_url)}" alt="">` : escapeHtml(initials(person?.name));

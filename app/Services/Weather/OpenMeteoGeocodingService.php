@@ -15,7 +15,7 @@ class OpenMeteoGeocodingService
             return null;
         }
 
-        $cacheKey = 'weather.geocode.'.sha1(mb_strtolower($place.'|'.$farm->country));
+        $cacheKey = 'weather.geocode.'.hash('sha256', mb_strtolower($place.'|'.$farm->country));
         $result = Cache::remember($cacheKey, now()->addDays(7), function () use ($place, $farm) {
             try {
                 $response = Http::acceptJson()

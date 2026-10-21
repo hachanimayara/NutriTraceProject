@@ -19,7 +19,9 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www
 
 # Copie du code du projet
-COPY . /var/www
+COPY --chown=www-data:www-data . /var/www
+
+RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
 
 # Configuration des droits d'accès
 RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache

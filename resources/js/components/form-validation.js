@@ -43,7 +43,7 @@ const updateDateConstraints = (form) => {
         if (!target || !source || !('min' in target)) return;
 
         const todayMinimum = target.dataset.ntDateTodayMin || '';
-        const minimum = [source.value || '', todayMinimum].filter(Boolean).sort().at(-1) || '';
+        const minimum = [source.value || '', todayMinimum].filter(Boolean).sort((a, b) => a.localeCompare(b)).at(-1) || '';
         target.min = minimum;
         target._flatpickr?.set('minDate', minimum || null);
         const isRangeValid = !source.value || !target.value || target.value >= source.value;

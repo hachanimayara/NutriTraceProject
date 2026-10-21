@@ -44,7 +44,7 @@ class OpenFoodFactsService
 
     public function search(string $term): array
     {
-        return Cache::remember('off:search:'.sha1($term), now()->addMinutes(5), function () use ($term) {
+        return Cache::remember('off:search:'.hash('sha256', $term), now()->addMinutes(5), function () use ($term) {
             try {
                 $response = Http::withUserAgent(config('services.open_food_facts.user_agent'))
                     ->acceptJson()->timeout(8)->connectTimeout(4)

@@ -32,7 +32,7 @@ class WeatherService
         }
 
         $timezone = $this->timezoneFor($farm);
-        $cacheKey = 'weather.forecast.'.sha1(implode('|', [round((float) $farm->latitude, 5), round((float) $farm->longitude, 5), $timezone]));
+        $cacheKey = 'weather.forecast.'.hash('sha256', implode('|', [round((float) $farm->latitude, 5), round((float) $farm->longitude, 5), $timezone]));
         if ($refresh) {
             Cache::forget($cacheKey);
         }
