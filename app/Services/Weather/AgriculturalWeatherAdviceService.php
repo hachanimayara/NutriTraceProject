@@ -20,7 +20,9 @@ class AgriculturalWeatherAdviceService
 
         foreach ($hourly['time'] as $index => $time) {
             $hourTime = Carbon::parse($time, $forecast['timezone']);
-            if ($hourTime->lt($currentTime) || $hourTime->gte($endTime)) continue;
+            if ($hourTime->lt($currentTime) || $hourTime->gte($endTime)) {
+                continue;
+            }
             $day = substr($time, 0, 10);
             $next24[$day] = ($next24[$day] ?? 0.0) + (float) ($hourly['precipitation'][$index] ?? 0);
         }
@@ -46,7 +48,9 @@ class AgriculturalWeatherAdviceService
                 $heatMax = max($heatMax ?? -INF, (float) $maximum);
             }
         }
-        if ($heatDays) $advice[] = $this->item('heat', 'Forte chaleur à surveiller', 'La chaleur peut augmenter le stress hydrique des cultures. Tenez compte du type de culture et de son stade.', 'Température maximale prévue', number_format($heatMax, 1, ',', ' ').' °C', $this->period($heatDays), 'watch', 'Surveillez l’humidité du sol et adaptez l’irrigation aux besoins observés.', $heatDays);
+        if ($heatDays) {
+            $advice[] = $this->item('heat', 'Forte chaleur à surveiller', 'La chaleur peut augmenter le stress hydrique des cultures. Tenez compte du type de culture et de son stade.', 'Température maximale prévue', number_format($heatMax, 1, ',', ' ').' °C', $this->period($heatDays), 'watch', 'Surveillez l’humidité du sol et adaptez l’irrigation aux besoins observés.', $heatDays);
+        }
 
         $windDays = [];
         $windMax = 0.0;
@@ -60,7 +64,9 @@ class AgriculturalWeatherAdviceService
                 $gustMax = max($gustMax, $gust);
             }
         }
-        if ($windDays) $advice[] = $this->item('wind', 'Vent fort prévu', 'Le vent peut gêner les traitements et certaines opérations agricoles.', 'Vent maximal / rafales', number_format($windMax, 0, ',', ' ').' / '.number_format($gustMax, 0, ',', ' ').' km/h', $this->period($windDays), $gustMax >= 70 ? 'high' : 'watch', 'Vérifiez les conditions et les consignes du produit avant tout traitement phytosanitaire.', $windDays);
+        if ($windDays) {
+            $advice[] = $this->item('wind', 'Vent fort prévu', 'Le vent peut gêner les traitements et certaines opérations agricoles.', 'Vent maximal / rafales', number_format($windMax, 0, ',', ' ').' / '.number_format($gustMax, 0, ',', ' ').' km/h', $this->period($windDays), $gustMax >= 70 ? 'high' : 'watch', 'Vérifiez les conditions et les consignes du produit avant tout traitement phytosanitaire.', $windDays);
+        }
 
         $wetDays = [];
         foreach ($daily['time'] as $index => $day) {
@@ -77,7 +83,11 @@ class AgriculturalWeatherAdviceService
         if ($wetDays) {
             $wetDays = array_values(array_unique($wetDays));
             $wetAmounts = [];
-            foreach ($daily['time'] as $index => $day) if (in_array($day, $wetDays, true)) $wetAmounts[] = (float) ($daily['precipitation_sum'][$index] ?? 0);
+            foreach ($daily['time'] as $index => $day) {
+                if (in_array($day, $wetDays, true)) {
+                    $wetAmounts[] = (float) ($daily['precipitation_sum'][$index] ?? 0);
+                }
+            }
             $advice[] = $this->item('runoff', 'Pluie importante à anticiper', 'Des pluies importantes sont prévues et peuvent perturber les récoltes ou provoquer de la stagnation d’eau.', 'Cumul journalier maximal', number_format(max($wetAmounts ?: [0]), 1, ',', ' ').' mm', $this->period($wetDays), 'watch', 'Vérifiez le drainage des parcelles et les travaux de récolte prévus.', $wetDays);
         }
 
@@ -90,7 +100,9 @@ class AgriculturalWeatherAdviceService
                 $lowest = min($lowest ?? INF, (float) $minimum);
             }
         }
-        if ($coldDays) $advice[] = $this->item('frost', 'Risque de gel à vérifier', 'Des températures proches ou sous le seuil de gel sont prévues. La sensibilité dépend de la culture et de son stade.', 'Température minimale prévue', number_format($lowest, 1, ',', ' ').' °C', $this->period($coldDays), 'high', 'Vérifiez les mesures de protection adaptées à votre culture et aux conditions locales.', $coldDays);
+        if ($coldDays) {
+            $advice[] = $this->item('frost', 'Risque de gel à vérifier', 'Des températures proches ou sous le seuil de gel sont prévues. La sensibilité dépend de la culture et de son stade.', 'Température minimale prévue', number_format($lowest, 1, ',', ' ').' °C', $this->period($coldDays), 'high', 'Vérifiez les mesures de protection adaptées à votre culture et aux conditions locales.', $coldDays);
+        }
 
         $humid = (float) ($current['relative_humidity_2m'] ?? 0);
         if ($humid >= ($thresholds['humidity_percent'] ?? 80) && $rainTotal >= 1) {
@@ -106,7 +118,9 @@ class AgriculturalWeatherAdviceService
                 $et0Max = max($et0Max ?? 0, (float) $et0);
             }
         }
-        if ($highEt0Days) $advice[] = $this->item('et0', 'Évapotranspiration de référence élevée', 'ET₀ élevée : surveillez les besoins en eau, sans assimiler cette valeur au besoin réel d’irrigation de la culture.', 'ET₀ maximale', number_format($et0Max, 1, ',', ' ').' mm/j', $this->period($highEt0Days), 'info', 'Croisez cette indication avec la culture, le stade végétatif et l’humidité du sol.', $highEt0Days);
+        if ($highEt0Days) {
+            $advice[] = $this->item('et0', 'Évapotranspiration de référence élevée', 'ET₀ élevée : surveillez les besoins en eau, sans assimiler cette valeur au besoin réel d’irrigation de la culture.', 'ET₀ maximale', number_format($et0Max, 1, ',', ' ').' mm/j', $this->period($highEt0Days), 'info', 'Croisez cette indication avec la culture, le stade végétatif et l’humidité du sol.', $highEt0Days);
+        }
 
         $priority = ['high' => 0, 'watch' => 1, 'info' => 2];
         usort($advice, fn ($a, $b) => $priority[$a['priority']] <=> $priority[$b['priority']]);

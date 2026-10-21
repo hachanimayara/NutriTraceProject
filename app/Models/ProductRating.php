@@ -17,8 +17,15 @@ class ProductRating extends Model
         return ['rating' => 'integer'];
     }
 
-    public function product(): BelongsTo { return $this->belongsTo(Product::class); }
-    public function consumer(): BelongsTo { return $this->belongsTo(User::class, 'consumer_id'); }
+    public function product(): BelongsTo
+    {
+        return $this->belongsTo(Product::class);
+    }
+
+    public function consumer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'consumer_id');
+    }
 
     public function scopePublished(Builder $query): Builder
     {

@@ -84,6 +84,7 @@ class HarvestPlanController extends Controller
     public function show(Request $request, HarvestPlan $harvestPlan)
     {
         $plan = $this->owned($request)->with(['farm', 'product', 'histories.actor'])->findOrFail($harvestPlan->id);
+
         return view('harvest-plans.show', compact('plan'));
     }
 
@@ -91,6 +92,7 @@ class HarvestPlanController extends Controller
     {
         $plan = $this->owned($request)->findOrFail($harvestPlan->id);
         abort_if(in_array($plan->status, ['completed', 'cancelled'], true), 403, 'Cette récolte ne peut plus être modifiée.');
+
         return view('harvest-plans.form', [
             'plan' => $plan,
             'farms' => Farm::where('user_id', $request->user()->id)->orderBy('name')->get(),
@@ -106,10 +108,15 @@ class HarvestPlanController extends Controller
         $data = $this->validated($request, $plan);
         $changes = [];
         foreach ($data as $key => $value) {
-            if ((string) $plan->getAttribute($key) !== (string) $value) $changes[$key] = ['before' => $plan->getAttribute($key), 'after' => $value];
+            if ((string) $plan->getAttribute($key) !== (string) $value) {
+                $changes[$key] = ['before' => $plan->getAttribute($key), 'after' => $value];
+            }
         }
         $plan->update($data);
-        if ($changes) $plan->histories()->create(['user_id' => $request->user()->id, 'event' => 'updated', 'changes' => $changes]);
+        if ($changes) {
+            $plan->histories()->create(['user_id' => $request->user()->id, 'event' => 'updated', 'changes' => $changes]);
+        }
+
         return redirect()->route('producer.harvest-plans.show', $plan)->with('status', 'Planification mise à jour.');
     }
 
@@ -126,6 +133,7 @@ class HarvestPlanController extends Controller
         $before = $plan->status;
         $plan->update(['status' => $next]);
         $plan->histories()->create(['user_id' => $request->user()->id, 'event' => 'status_changed', 'changes' => ['status' => ['before' => $before, 'after' => $next]]]);
+
         return back()->with('status', 'Statut de la récolte mis à jour.');
     }
 
@@ -135,6 +143,7 @@ class HarvestPlanController extends Controller
         abort_unless(in_array($plan->status, ['planned', 'cancelled'], true), 403, 'Seules les récoltes planifiées ou annulées peuvent être supprimées.');
         $plan->histories()->create(['user_id' => $request->user()->id, 'event' => 'deleted']);
         $plan->delete();
+
         return redirect()->route('producer.harvest-plans.index')->with('status', 'Planification supprimée.');
     }
 
@@ -148,8 +157,12 @@ class HarvestPlanController extends Controller
         $unchangedPastEnd = $plan && $plan->ends_at->lt(today()) && $endDate === $plan->ends_at->toDateString();
         $startRules = ['required', 'date'];
         $endRules = ['required', 'date', 'after_or_equal:starts_at'];
-        if (! $unchangedPastStart) $startRules[] = 'after_or_equal:'.$today;
-        if (! $unchangedPastEnd) $endRules[] = 'after_or_equal:'.$today;
+        if (! $unchangedPastStart) {
+            $startRules[] = 'after_or_equal:'.$today;
+        }
+        if (! $unchangedPastEnd) {
+            $endRules[] = 'after_or_equal:'.$today;
+        }
 
         return $request->validate([
             'farm_id' => ['required', 'integer', Rule::exists('farms', 'id')->where('user_id', $request->user()->id)->whereNull('deleted_at')],
@@ -186,11 +199,19 @@ class HarvestPlanController extends Controller
     {
         $query->when($filters['farm_id'] ?? null, fn (Builder $q, $id) => $q->where('farm_id', $id))
             ->when($filters['product_id'] ?? null, fn (Builder $q, $id) => $q->where('product_id', $id));
-        if (($filters['status'] ?? null) === 'overdue') $query->whereIn('status', ['planned', 'in_progress'])->whereDate('ends_at', '<', today());
-        elseif (! empty($filters['status'])) $query->where('status', $filters['status']);
-        if (($filters['period'] ?? null) === 'today') $query->whereDate('starts_at', '<=', today())->whereDate('ends_at', '>=', today());
-        elseif (($filters['period'] ?? null) === 'week') $query->whereDate('starts_at', '<=', today()->endOfWeek())->whereDate('ends_at', '>=', today()->startOfWeek());
-        if (! empty($filters['q'])) $query->where(fn (Builder $q) => $q->where('reference', 'like', '%'.$filters['q'].'%')->orWhereHas('product', fn (Builder $product) => $product->where('name', 'like', '%'.$filters['q'].'%')));
+        if (($filters['status'] ?? null) === 'overdue') {
+            $query->whereIn('status', ['planned', 'in_progress'])->whereDate('ends_at', '<', today());
+        } elseif (! empty($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+        if (($filters['period'] ?? null) === 'today') {
+            $query->whereDate('starts_at', '<=', today())->whereDate('ends_at', '>=', today());
+        } elseif (($filters['period'] ?? null) === 'week') {
+            $query->whereDate('starts_at', '<=', today()->endOfWeek())->whereDate('ends_at', '>=', today()->startOfWeek());
+        }
+        if (! empty($filters['q'])) {
+            $query->where(fn (Builder $q) => $q->where('reference', 'like', '%'.$filters['q'].'%')->orWhereHas('product', fn (Builder $product) => $product->where('name', 'like', '%'.$filters['q'].'%')));
+        }
     }
 
     private function statusColor(string $status): string

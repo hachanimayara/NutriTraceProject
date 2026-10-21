@@ -25,6 +25,7 @@ class MessagingTest extends TestCase
         sort($ids, SORT_NUMERIC);
         $conversation = ChatConversation::create(['pair_key' => hash('sha256', implode(':', $ids)), 'created_by' => $first->id]);
         $conversation->participants()->attach($ids);
+
         return $conversation;
     }
 

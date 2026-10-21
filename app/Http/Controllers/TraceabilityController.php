@@ -30,8 +30,8 @@ class TraceabilityController extends Controller
         'transformations' => ['model' => Transformation::class, 'label' => 'Transformations', 'roles' => ['admin', 'transformateur'], 'write_roles' => ['transformateur'], 'fields' => ['reference', 'name', 'facility', 'performed_at', 'process_description', 'energy_kwh', 'water_liters', 'status', 'notes']],
         'stores' => ['model' => Store::class, 'label' => 'Points de vente', 'roles' => ['admin', 'distributeur'], 'write_roles' => ['distributeur'], 'fields' => ['name', 'reference', 'address', 'city', 'country', 'contact_name', 'phone', 'latitude', 'longitude', 'status']],
         'distributions' => ['model' => Distribution::class, 'label' => 'Distributions', 'roles' => ['admin', 'distributeur'], 'write_roles' => ['distributeur'], 'fields' => ['reference', 'lot_id', 'store_id', 'quantity_shipped', 'quantity_delivered', 'unit', 'shipped_at', 'expected_at', 'delivered_at', 'origin_name', 'origin_latitude', 'origin_longitude', 'status', 'notes']],
-        'certifications' => ['model' => Certification::class, 'label' => 'Certifications', 'roles' => ['admin', 'producteur', 'transformateur', 'distributeur'], 'write_roles' => ['admin'], 'fields' => ['title', 'scheme', 'certificate_number', 'issuer', 'farm_id', 'product_id', 'issued_at', 'expires_at', 'status', 'notes']],
-        'indicators' => ['model' => EnvironmentalIndicator::class, 'label' => 'Indicateurs environnementaux', 'roles' => ['admin', 'producteur', 'transformateur', 'distributeur'], 'write_roles' => ['admin'], 'fields' => ['stage', 'metric_code', 'name', 'value', 'unit', 'product_id', 'lot_id', 'method', 'measured_at', 'source_notes', 'status', 'validated_by', 'validated_at']],
+        'certifications' => ['model' => Certification::class, 'label' => 'Certifications', 'roles' => ['admin', 'producteur', 'transformateur', 'distributeur'], 'write_roles' => ['admin', 'producteur'], 'fields' => ['title', 'scheme', 'certificate_number', 'issuer', 'farm_id', 'product_id', 'issued_at', 'expires_at', 'status', 'notes']],
+        'indicators' => ['model' => EnvironmentalIndicator::class, 'label' => 'Indicateurs environnementaux', 'roles' => ['admin', 'producteur', 'transformateur', 'distributeur'], 'write_roles' => ['admin', 'producteur'], 'fields' => ['stage', 'metric_code', 'name', 'value', 'unit', 'product_id', 'lot_id', 'method', 'measured_at', 'source_notes', 'status', 'validated_by', 'validated_at']],
     ];
 
     public function index(Request $request, string $resource)
@@ -151,7 +151,9 @@ class TraceabilityController extends Controller
     public function create(string $resource)
     {
         $config = $this->config($resource);
-        $this->assertCanWrite($config);
+        if (! auth()->user()->isAdmin()) {
+            $this->assertCanWrite($config);
+        }
 
         if (auth()->user()->role === 'producteur' && in_array($resource, ['farms', 'products'], true)) {
             return redirect()->route('workspace.resources.index', ['resource' => $resource, 'modal' => 'create']);
@@ -172,6 +174,11 @@ class TraceabilityController extends Controller
     {
         $config = $this->config($resource);
         $this->assertCanWrite($config);
+        if ($resource === 'indicators' && ! auth()->user()->isAdmin() && $request->input('status') === 'valid') {
+            throw ValidationException::withMessages([
+                'status' => ['Vous ne pouvez pas valider directement cet indicateur.'],
+            ]);
+        }
         $data = $this->validated($request, $resource, $config);
         $data = $this->setOwnership($data, $resource);
         if ($resource === 'farms' && $request->hasFile('document')) {
@@ -201,8 +208,12 @@ class TraceabilityController extends Controller
         $record = DB::transaction(function () use ($data, $resource, $config, $request, $associatedProducts) {
             $record = $config['model']::create($data);
             $this->syncTransformationLots($record, $resource, $request);
-            if ($associatedProducts !== null) $this->syncFarmProducts($record, $associatedProducts);
-            if ($record instanceof Certification) ComplianceEvent::create(['certification_id' => $record->id, 'actor_id' => $request->user()->id, 'event' => 'certification.registered', 'to_status' => $record->status, 'note' => $record->notes, 'metadata' => ['certificate_number' => $record->certificate_number, 'scheme' => $record->scheme, 'expires_at' => $record->expires_at?->toDateString(), 'document_attached' => (bool) $record->document_path]]);
+            if ($associatedProducts !== null) {
+                $this->syncFarmProducts($record, $associatedProducts);
+            }
+            if ($record instanceof Certification) {
+                ComplianceEvent::create(['certification_id' => $record->id, 'actor_id' => $request->user()->id, 'event' => 'certification.registered', 'to_status' => $record->status, 'note' => $record->notes, 'metadata' => ['certificate_number' => $record->certificate_number, 'scheme' => $record->scheme, 'expires_at' => $record->expires_at?->toDateString(), 'document_attached' => (bool) $record->document_path]]);
+            }
 
             return $record;
         });
@@ -222,7 +233,9 @@ class TraceabilityController extends Controller
         $config = $this->config($resource);
         $item = $this->scopedQuery($resource, $config)->findOrFail($record);
         $item->load($this->relations($resource));
-        if ($resource === 'certifications' && auth()->user()->isAdmin()) $item->load('complianceEvents');
+        if ($resource === 'certifications' && auth()->user()->isAdmin()) {
+            $item->load('complianceEvents');
+        }
 
         $data = ['resource' => $resource, 'config' => $config, 'record' => $item];
 
@@ -304,7 +317,9 @@ class TraceabilityController extends Controller
         DB::transaction(function () use ($item, $data, $resource, $request, $associatedProducts, $oldCertificationStatus, $oldCertificationExpiry) {
             $item->update($data);
             $this->syncTransformationLots($item, $resource, $request);
-            if ($associatedProducts !== null) $this->syncFarmProducts($item, $associatedProducts);
+            if ($associatedProducts !== null) {
+                $this->syncFarmProducts($item, $associatedProducts);
+            }
             if ($item instanceof Certification) {
                 $renewed = $oldCertificationExpiry !== $item->expires_at?->toDateString() && $item->expires_at;
                 $event = $renewed ? 'certification.renewed' : ($oldCertificationStatus !== $item->status ? 'certification.reviewed' : 'certification.updated');
@@ -458,7 +473,9 @@ class TraceabilityController extends Controller
         $config = $this->config($resource);
         $this->assertCanWrite($config);
         $preview = session('traceability_csv_preview');
-        if (($preview['resource'] ?? null) !== $resource) $preview = null;
+        if (($preview['resource'] ?? null) !== $resource) {
+            $preview = null;
+        }
         if (request()->boolean('popup')) {
             return view('traceability.csv-import-popup', compact('resource', 'config', 'preview'));
         }
@@ -472,8 +489,12 @@ class TraceabilityController extends Controller
         $this->assertCanWrite($config);
         $validated = $request->validate(['file' => ['required', 'file', 'mimes:csv,txt', 'max:1024']]);
         $fields = $config['fields'];
-        if ($resource === 'farms') $fields[] = 'associated_products';
-        if ($resource === 'transformations') array_push($fields, 'input_lots', 'output_lots');
+        if ($resource === 'farms') {
+            $fields[] = 'associated_products';
+        }
+        if ($resource === 'transformations') {
+            array_push($fields, 'input_lots', 'output_lots');
+        }
         $preview = $importer->analyze($validated['file'], $resource, $fields);
         if (! $preview['compatible']) {
             return back()->withErrors(['file' => $preview['error'] ?: 'Ce fichier CSV ne correspond pas à cette gestion.']);
@@ -481,7 +502,7 @@ class TraceabilityController extends Controller
         foreach ($preview['rows'] as &$row) {
             try {
                 $this->validated(new Request($row['data']), $resource, $config);
-            } catch (\Illuminate\Validation\ValidationException $exception) {
+            } catch (ValidationException $exception) {
                 foreach ($exception->errors() as $messages) {
                     array_push($row['issues'], ...$messages);
                 }
@@ -515,8 +536,12 @@ class TraceabilityController extends Controller
         $this->assertCanWrite($config);
         $fields = $config['fields'];
         $fields = array_values(array_diff($fields, ['validated_by', 'validated_at']));
-        if ($resource === 'farms') $fields[] = 'associated_products';
-        if ($resource === 'transformations') array_push($fields, 'input_lots', 'output_lots');
+        if ($resource === 'farms') {
+            $fields[] = 'associated_products';
+        }
+        if ($resource === 'transformations') {
+            array_push($fields, 'input_lots', 'output_lots');
+        }
         $headers = $importer->templateHeaders($fields);
 
         return response()->streamDownload(function () use ($headers): void {
@@ -581,7 +606,7 @@ class TraceabilityController extends Controller
     {
         $indicatorStatusRule = auth()->user()->isAdmin()
             ? ['required', Rule::in(['pending', 'valid', 'rejected'])]
-            : ['prohibited'];
+            : ['nullable', 'string', Rule::notIn(['valid'])];
         $unique = fn (string $table, string $column = 'reference') => $id ? Rule::unique($table, $column)->ignore($id) : Rule::unique($table, $column);
         $farmExists = Rule::exists('farms', 'id');
         $productExists = Rule::exists('products', 'id');
@@ -606,6 +631,7 @@ class TraceabilityController extends Controller
             'indicators' => ['stage' => ['required', 'string', 'max:80'], 'metric_code' => ['required', 'string', 'max:80'], 'name' => ['required', 'string', 'max:160'], 'value' => ['required', 'numeric'], 'unit' => ['required', 'string', 'max:32'], 'product_id' => ['nullable', $productExists], 'lot_id' => ['nullable', Rule::exists('lots', 'id')], 'method' => ['nullable', 'string', 'max:190'], 'measured_at' => ['nullable', 'date'], 'source_notes' => ['nullable', 'string', 'max:5000'], 'status' => $indicatorStatusRule],
         };
         $messages = [
+            'status.not_in' => 'Vous ne pouvez pas valider directement un indicateur.',
             'exists' => 'Veuillez sélectionner une option valide.',
             'unique' => 'Cette référence existe déjà.',
             'after_or_equal' => 'Cette date doit être postérieure ou égale à la date d’expédition.',
@@ -615,7 +641,9 @@ class TraceabilityController extends Controller
             'max.file' => 'Le fichier ne peut pas dépasser 5 Mo.',
         ];
         $data = $request->validate($rules, $messages);
-        if ($resource === 'farms') $data['status'] = $data['status'] ?? 'active';
+        if ($resource === 'farms') {
+            $data['status'] = $data['status'] ?? 'active';
+        }
         if ($resource === 'certifications' && (bool) ($data['farm_id'] ?? null) === (bool) ($data['product_id'] ?? null)) {
             throw ValidationException::withMessages(['farm_id' => 'Associez la certification a une exploitation ou a un produit, mais pas aux deux.']);
         }
@@ -625,7 +653,7 @@ class TraceabilityController extends Controller
         if ($resource === 'indicators' && empty($data['product_id']) && empty($data['lot_id'])) {
             throw ValidationException::withMessages(['product_id' => 'Associez cet indicateur a un produit ou a un lot.']);
         }
-        if ($resource === 'certifications' && ! auth()->user()->isAdmin()) {
+        if ($resource === 'certifications') {
             $data['status'] = 'pending';
         }
         if ($resource === 'indicators') {

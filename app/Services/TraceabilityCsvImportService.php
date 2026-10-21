@@ -64,16 +64,21 @@ class TraceabilityCsvImportService
         $header = fgetcsv($stream, 0, $delimiter, '"', '\\');
         if (! is_array($header) || count($header) < 1) {
             fclose($stream);
+
             return ['compatible' => false, 'headers' => [], 'unknown' => [], 'rows' => [], 'error' => 'Impossible de lire les en-têtes CSV.'];
         }
 
         $fieldLookup = [];
         foreach ($allowedFields as $field) {
             $fieldLookup[$this->normalize($field)] = $field;
-            foreach (self::ALIASES[$field] ?? [] as $alias) $fieldLookup[$this->normalize($alias)] = $field;
+            foreach (self::ALIASES[$field] ?? [] as $alias) {
+                $fieldLookup[$this->normalize($alias)] = $field;
+            }
         }
         foreach (self::RESOURCE_NAME_ALIASES[$resource] ?? [] as $alias) {
-            if (in_array('name', $allowedFields, true)) $fieldLookup[$this->normalize($alias)] = 'name';
+            if (in_array('name', $allowedFields, true)) {
+                $fieldLookup[$this->normalize($alias)] = 'name';
+            }
         }
         $headers = [];
         $unknown = [];
@@ -84,9 +89,12 @@ class TraceabilityCsvImportService
             if ($mapped === null) {
                 $unknown[] = trim((string) $label);
                 $headers[$index] = null;
+
                 continue;
             }
-            if (in_array($mapped, $headers, true)) $ambiguous[] = $mapped;
+            if (in_array($mapped, $headers, true)) {
+                $ambiguous[] = $mapped;
+            }
             $headers[$index] = $mapped;
         }
 
@@ -95,19 +103,28 @@ class TraceabilityCsvImportService
         $line = 1;
         while (($values = fgetcsv($stream, 0, $delimiter, '"', '\\')) !== false) {
             $line++;
-            if ($values === [null] || (count($values) === 1 && trim((string) $values[0]) === '')) continue;
+            if ($values === [null] || (count($values) === 1 && trim((string) $values[0]) === '')) {
+                continue;
+            }
             if (count($rows) >= 100) {
                 fclose($stream);
+
                 return ['compatible' => false, 'headers' => $header, 'unknown' => $unknown, 'rows' => [], 'error' => 'Le fichier dépasse la limite de 100 lignes. Divisez-le en plusieurs fichiers.'];
             }
             $data = [];
             $issues = [];
             foreach ($headers as $index => $field) {
-                if ($field === null || ! array_key_exists($index, $values)) continue;
+                if ($field === null || ! array_key_exists($index, $values)) {
+                    continue;
+                }
                 $value = trim((string) $values[$index]);
                 if ($value !== '') {
-                    if ($this->isNumeric($field) && ! str_contains($value, '.') && str_contains($value, ',')) $value = str_replace(',', '.', $value);
-                    if ($this->isDate($field) && $this->validDate($value)) $value = $this->formatDateForForm($field, $value);
+                    if ($this->isNumeric($field) && ! str_contains($value, '.') && str_contains($value, ',')) {
+                        $value = str_replace(',', '.', $value);
+                    }
+                    if ($this->isDate($field) && $this->validDate($value)) {
+                        $value = $this->formatDateForForm($field, $value);
+                    }
                     if (array_key_exists($field, $data)) {
                         $issues[] = "Plusieurs colonnes alimentent le champ « {$field} ».";
                         unset($data[$field]);
@@ -119,14 +136,26 @@ class TraceabilityCsvImportService
                 }
             }
             foreach ($required as $field) {
-                if (! isset($data[$field]) || trim((string) $data[$field]) === '') $issues[] = "Champ obligatoire à compléter : {$field}.";
+                if (! isset($data[$field]) || trim((string) $data[$field]) === '') {
+                    $issues[] = "Champ obligatoire à compléter : {$field}.";
+                }
             }
             foreach ($data as $field => $value) {
-                if ($this->isNumeric($field) && ! is_numeric(str_replace(',', '.', $value))) $issues[] = "Valeur numérique invalide dans « {$field} » : {$value}.";
-                if (in_array($field, ['area_hectares', 'quantity', 'quantity_shipped', 'quantity_delivered', 'energy_kwh', 'water_liters'], true) && is_numeric($value) && (float) $value < 0) $issues[] = "La valeur de « {$field} » ne peut pas être négative.";
-                if ($field === 'quantity' && is_numeric($value) && (float) $value <= 0 && $resource === 'lots') $issues[] = 'La quantité d’un lot doit être supérieure à zéro.';
-                if ($field === 'quantity_shipped' && is_numeric($value) && (float) $value <= 0) $issues[] = 'La quantité expédiée doit être supérieure à zéro.';
-                if ($this->isDate($field) && ! $this->validDate($value)) $issues[] = "Date invalide dans « {$field} » : {$value}.";
+                if ($this->isNumeric($field) && ! is_numeric(str_replace(',', '.', $value))) {
+                    $issues[] = "Valeur numérique invalide dans « {$field} » : {$value}.";
+                }
+                if (in_array($field, ['area_hectares', 'quantity', 'quantity_shipped', 'quantity_delivered', 'energy_kwh', 'water_liters'], true) && is_numeric($value) && (float) $value < 0) {
+                    $issues[] = "La valeur de « {$field} » ne peut pas être négative.";
+                }
+                if ($field === 'quantity' && is_numeric($value) && (float) $value <= 0 && $resource === 'lots') {
+                    $issues[] = 'La quantité d’un lot doit être supérieure à zéro.';
+                }
+                if ($field === 'quantity_shipped' && is_numeric($value) && (float) $value <= 0) {
+                    $issues[] = 'La quantité expédiée doit être supérieure à zéro.';
+                }
+                if ($this->isDate($field) && ! $this->validDate($value)) {
+                    $issues[] = "Date invalide dans « {$field} » : {$value}.";
+                }
             }
             $rows[] = ['line' => $line, 'data' => $data, 'issues' => array_values(array_unique($issues)), 'status' => $issues ? 'à compléter / vérifier' : 'prête à vérifier'];
         }
@@ -156,6 +185,7 @@ class TraceabilityCsvImportService
     {
         $counts = [';' => substr_count($line, ';'), ',' => substr_count($line, ','), "\t" => substr_count($line, "\t")];
         arsort($counts);
+
         return array_key_first($counts) ?: ';';
     }
 
@@ -175,8 +205,11 @@ class TraceabilityCsvImportService
         foreach ($formats as $format) {
             $date = \DateTimeImmutable::createFromFormat('!'.$format, $value);
             $errors = \DateTimeImmutable::getLastErrors();
-            if ($date && ($errors === false || ($errors['warning_count'] === 0 && $errors['error_count'] === 0))) return true;
+            if ($date && ($errors === false || ($errors['warning_count'] === 0 && $errors['error_count'] === 0))) {
+                return true;
+            }
         }
+
         return false;
     }
 
@@ -190,6 +223,7 @@ class TraceabilityCsvImportService
                     : $date->format('Y-m-d\\TH:i');
             }
         }
+
         return $value;
     }
 }

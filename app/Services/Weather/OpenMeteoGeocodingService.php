@@ -11,7 +11,9 @@ class OpenMeteoGeocodingService
     public function resolve(Farm $farm): ?array
     {
         $place = trim((string) $farm->location);
-        if ($place === '') return null;
+        if ($place === '') {
+            return null;
+        }
 
         $cacheKey = 'weather.geocode.'.sha1(mb_strtolower($place.'|'.$farm->country));
         $result = Cache::remember($cacheKey, now()->addDays(7), function () use ($place, $farm) {

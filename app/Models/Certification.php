@@ -19,9 +19,28 @@ class Certification extends Model
         return ['issued_at' => 'date', 'expires_at' => 'date'];
     }
 
-    public function creator(): BelongsTo { return $this->belongsTo(User::class, 'created_by'); }
-    public function farm(): BelongsTo { return $this->belongsTo(Farm::class); }
-    public function product(): BelongsTo { return $this->belongsTo(Product::class); }
-    public function complianceEvents(): HasMany { return $this->hasMany(ComplianceEvent::class)->with('actor')->latest(); }
-    public function alerts(): MorphMany { return $this->morphMany(TraceabilityAlert::class, 'subject'); }
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function farm(): BelongsTo
+    {
+        return $this->belongsTo(Farm::class);
+    }
+
+    public function product(): BelongsTo
+    {
+        return $this->belongsTo(Product::class);
+    }
+
+    public function complianceEvents(): HasMany
+    {
+        return $this->hasMany(ComplianceEvent::class)->with('actor')->latest();
+    }
+
+    public function alerts(): MorphMany
+    {
+        return $this->morphMany(TraceabilityAlert::class, 'subject');
+    }
 }

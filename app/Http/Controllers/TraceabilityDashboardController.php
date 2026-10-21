@@ -53,7 +53,7 @@ class TraceabilityDashboardController extends Controller
                 'upcoming' => (clone $harvests)->with(['farm:id,name', 'product:id,name'])->whereIn('status', ['planned', 'in_progress'])->whereDate('ends_at', '>=', today())->orderBy('starts_at')->limit(5)->get(),
             ];
         }
-        $quickLinks = collect(\App\Helpers\MenuHelper::getMenuGroups()[0]['items'])
+        $quickLinks = collect(MenuHelper::getMenuGroups()[0]['items'])
             ->reject(fn ($item) => in_array($item['path'], ['/', '/notifications', '/profile', $user->getDashboardUrl()], true))
             ->values();
         $primary = match ($role) {
@@ -242,7 +242,7 @@ class TraceabilityDashboardController extends Controller
         $this->appendActivities($activities, Distribution::query()->with(['owner', 'lot.product'])->latest()->limit(5)->get(), 'Distribution', fn ($item) => $item->reference, fn ($item) => ($item->owner?->name ?: 'Utilisateur').' &middot; '.($item->lot?->product?->name ?: 'Produit'), '/workspace/distributions');
         $this->appendActivities($activities, Certification::query()->with('creator')->latest()->limit(5)->get(), 'Certification', fn ($item) => $item->title, fn ($item) => ($item->creator?->name ?: 'Utilisateur').' &middot; '.ucfirst($item->status), '/workspace/certifications');
         $this->appendActivities($activities, EnvironmentalIndicator::query()->with('recorder')->latest()->limit(5)->get(), 'Indicateur', fn ($item) => $item->name, fn ($item) => ($item->recorder?->name ?: 'Utilisateur').' &middot; '.$item->value.' '.$item->unit, '/workspace/indicators');
-        $this->appendActivities($activities, \App\Models\ProductRating::query()->with(['consumer:id,name', 'product:id,name'])->latest()->limit(5)->get(), 'Avis consommateur', fn ($item) => ($item->product?->name ?: 'Produit').' · '.$item->rating.'/5', fn ($item) => ($item->consumer?->name ?: ($item->consumer_name ?: 'Visiteur')).($item->comment ? ' · '.mb_strimwidth($item->comment, 0, 90, '…') : ' · Sans commentaire').' · '.($item->status === 'published' ? 'Publié' : 'Masqué'), '/admin/product-ratings');
+        $this->appendActivities($activities, ProductRating::query()->with(['consumer:id,name', 'product:id,name'])->latest()->limit(5)->get(), 'Avis consommateur', fn ($item) => ($item->product?->name ?: 'Produit').' · '.$item->rating.'/5', fn ($item) => ($item->consumer?->name ?: ($item->consumer_name ?: 'Visiteur')).($item->comment ? ' · '.mb_strimwidth($item->comment, 0, 90, '…') : ' · Sans commentaire').' · '.($item->status === 'published' ? 'Publié' : 'Masqué'), '/admin/product-ratings');
         AdminAuditLog::latest()->limit(5)->get()->each(function (AdminAuditLog $log) use ($activities) {
             $admin = User::find($log->admin_id);
             $actions = ['user.approved' => 'Compte approuv&eacute;', 'user.activated' => 'Compte r&eacute;activ&eacute;', 'user.suspended' => 'Compte suspendu', 'user.deleted' => 'Compte supprim&eacute;'];

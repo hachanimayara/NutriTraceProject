@@ -12,7 +12,10 @@ class HarvestPlanNotification extends Notification
 
     public function __construct(public HarvestPlan $plan, public string $eventKey, public string $message) {}
 
-    public function via(object $notifiable): array { return ['database']; }
+    public function via(object $notifiable): array
+    {
+        return ['database'];
+    }
 
     public function toArray(object $notifiable): array
     {

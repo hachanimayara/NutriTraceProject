@@ -2,18 +2,20 @@
 
 namespace App\Console\Commands;
 
-use App\Models\HarvestPlan;
 use App\Mail\HarvestPlanReminderMail;
+use App\Models\HarvestPlan;
 use App\Notifications\HarvestPlanNotification;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 use Throwable;
 
 class SendHarvestPlanReminders extends Command
 {
     protected $signature = 'nutritrace:harvest-reminders';
+
     protected $description = 'Envoie les rappels et alertes de récolte aux producteurs';
 
     public function handle(): int
@@ -37,12 +39,13 @@ class SendHarvestPlanReminders extends Command
                         $this->notifyOnce($plan, 'reminder_'.$daysUntil, "Rappel : récolte de {$plan->product->name} prévue dans {$daysUntil} jour(s).");
                     }
                     if ($daysUntilEnd < 0) {
-                        $this->notifyOnce($plan, 'overdue', "La récolte de {$plan->product->name} est en retard depuis ".abs($daysUntilEnd)." jour(s).");
+                        $this->notifyOnce($plan, 'overdue', "La récolte de {$plan->product->name} est en retard depuis ".abs($daysUntilEnd).' jour(s).');
                     }
                 }
             });
 
         $this->info('Rappels de récolte vérifiés.');
+
         return self::SUCCESS;
     }
 
@@ -102,15 +105,15 @@ class SendHarvestPlanReminders extends Command
             HarvestPlan::query()->whereKey($claim->id)->whereDate('reminder_email_for', $reminderDate)
                 ->update(['reminder_email_claimed_at' => null]);
             $diagnostic = $exception->getMessage();
-            foreach ([config("mail.mailers.smtp.username"), config("mail.mailers.smtp.password")] as $secret) {
-                if (is_string($secret) && $secret !== "") {
-                    $diagnostic = str_replace($secret, "[redacted]", $diagnostic);
+            foreach ([config('mail.mailers.smtp.username'), config('mail.mailers.smtp.password')] as $secret) {
+                if (is_string($secret) && $secret !== '') {
+                    $diagnostic = str_replace($secret, '[redacted]', $diagnostic);
                 }
             }
             Log::error('Échec de l’envoi du rappel de récolte par e-mail.', [
                 'harvest_plan_id' => $claim->id,
                 'exception_class' => $exception::class,
-                'diagnostic' => \Illuminate\Support\Str::limit($diagnostic, 400),
+                'diagnostic' => Str::limit($diagnostic, 400),
             ]);
             $this->error("L’envoi du rappel pour {$claim->reference} a échoué; il sera retenté.");
         }

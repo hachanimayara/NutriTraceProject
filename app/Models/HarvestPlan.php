@@ -35,10 +35,25 @@ class HarvestPlan extends Model
         });
     }
 
-    public function owner(): BelongsTo { return $this->belongsTo(User::class, 'user_id'); }
-    public function farm(): BelongsTo { return $this->belongsTo(Farm::class)->withTrashed(); }
-    public function product(): BelongsTo { return $this->belongsTo(Product::class)->withTrashed(); }
-    public function histories(): HasMany { return $this->hasMany(HarvestPlanHistory::class)->latest(); }
+    public function owner(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function farm(): BelongsTo
+    {
+        return $this->belongsTo(Farm::class)->withTrashed();
+    }
+
+    public function product(): BelongsTo
+    {
+        return $this->belongsTo(Product::class)->withTrashed();
+    }
+
+    public function histories(): HasMany
+    {
+        return $this->hasMany(HarvestPlanHistory::class)->latest();
+    }
 
     public function getDisplayStatusAttribute(): string
     {

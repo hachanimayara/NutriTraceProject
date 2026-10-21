@@ -75,8 +75,15 @@ class ProducerWeatherController extends Controller
             $start = $plan->starts_at->toDateString();
             $end = $plan->ends_at->toDateString();
             $risks = collect($advice)->filter(function (array $item) use ($start, $end) {
-                if (! in_array($item['type'], ['rain', 'runoff', 'storm', 'wind', 'heat'], true)) return false;
-                foreach ($item['days'] as $day) if ($day >= $start && $day <= $end) return true;
+                if (! in_array($item['type'], ['rain', 'runoff', 'storm', 'wind', 'heat'], true)) {
+                    return false;
+                }
+                foreach ($item['days'] as $day) {
+                    if ($day >= $start && $day <= $end) {
+                        return true;
+                    }
+                }
+
                 return false;
             })->map(fn (array $item) => ['type' => $item['type'], 'title' => $item['title'], 'priority' => $item['priority']])->values();
 

@@ -15,8 +15,23 @@ class CorrectiveAction extends Model
         return ['due_at' => 'datetime', 'completed_at' => 'datetime'];
     }
 
-    public function alert(): BelongsTo { return $this->belongsTo(TraceabilityAlert::class, 'alert_id'); }
-    public function responsible(): BelongsTo { return $this->belongsTo(User::class, 'responsible_id'); }
-    public function creator(): BelongsTo { return $this->belongsTo(User::class, 'created_by'); }
-    public function events(): HasMany { return $this->hasMany(ComplianceEvent::class, 'corrective_action_id')->latest(); }
+    public function alert(): BelongsTo
+    {
+        return $this->belongsTo(TraceabilityAlert::class, 'alert_id');
+    }
+
+    public function responsible(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'responsible_id');
+    }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function events(): HasMany
+    {
+        return $this->hasMany(ComplianceEvent::class, 'corrective_action_id')->latest();
+    }
 }

@@ -159,7 +159,9 @@ class MessagingController extends Controller
         }
 
         $messages = $query->get();
-        if (! $isPolling) $messages = $messages->reverse()->values();
+        if (! $isPolling) {
+            $messages = $messages->reverse()->values();
+        }
         if (! $isPolling && $messages->isNotEmpty()) {
             $incomingIds = $messages->where('sender_id', '!=', $user->id)->pluck('id');
             if ($incomingIds->isNotEmpty()) {
@@ -206,11 +208,14 @@ class MessagingController extends Controller
             'client_uuid' => ['required', 'uuid'],
         ]);
         $body = trim($data['body']);
-        if ($body === '') return response()->json(['message' => 'Écrivez un message avant de l’envoyer.'], 422);
+        if ($body === '') {
+            return response()->json(['message' => 'Écrivez un message avant de l’envoyer.'], 422);
+        }
 
         $existing = ChatMessage::query()->where('sender_id', $user->id)->where('client_uuid', $data['client_uuid'])->first();
         if ($existing) {
             abort_unless($existing->conversation_id === $conversation->id, 409);
+
             return response()->json(['message' => $this->messagePayload($existing->load('sender:id,name,role,profile_photo_path'), $user), 'duplicate' => true], 200);
         }
 
@@ -222,7 +227,9 @@ class MessagingController extends Controller
             ]);
             $conversation->forceFill(['last_message_at' => $message->created_at])->save();
             $recipient = $conversation->participants()->where('users.id', '!=', $user->id)->first();
-            if ($recipient) $recipient->notify(new NewChatMessage($message->load('sender:id,name')));
+            if ($recipient) {
+                $recipient->notify(new NewChatMessage($message->load('sender:id,name')));
+            }
 
             return $message->load('sender:id,name,role,profile_photo_path');
         });
@@ -233,6 +240,7 @@ class MessagingController extends Controller
     public function heartbeat(Request $request): JsonResponse
     {
         $this->touchPresence($request->user());
+
         return response()->json(['status' => 'online', 'expires_in' => self::PRESENCE_TTL]);
     }
 

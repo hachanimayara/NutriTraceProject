@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\Certification;
-use App\Models\ComplianceEvent;
 use App\Models\CorrectiveAction;
 use App\Models\EnvironmentalIndicator;
 use App\Models\Farm;

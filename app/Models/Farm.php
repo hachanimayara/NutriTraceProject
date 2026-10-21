@@ -18,8 +18,23 @@ class Farm extends Model
         return ['area_hectares' => 'decimal:3', 'started_at' => 'date'];
     }
 
-    public function owner(): BelongsTo { return $this->belongsTo(User::class, 'user_id'); }
-    public function products(): HasMany { return $this->hasMany(Product::class); }
-    public function certifications(): HasMany { return $this->hasMany(Certification::class); }
-    public function harvestPlans(): HasMany { return $this->hasMany(HarvestPlan::class); }
+    public function owner(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function products(): HasMany
+    {
+        return $this->hasMany(Product::class);
+    }
+
+    public function certifications(): HasMany
+    {
+        return $this->hasMany(Certification::class);
+    }
+
+    public function harvestPlans(): HasMany
+    {
+        return $this->hasMany(HarvestPlan::class);
+    }
 }

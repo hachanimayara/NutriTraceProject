@@ -10,6 +10,7 @@ use App\Models\Product;
 use App\Models\TraceabilityAlert;
 use App\Models\Transformation;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Storage;
 
 /** Deterministic data-quality checks. This service does not call or simulate an AI model. */
 class TraceabilityAnalysisService
@@ -23,8 +24,12 @@ class TraceabilityAnalysisService
         Certification::with(['product.lots', 'farm.certifications', 'farm.products.lots'])->each(function (Certification $certification) use (&$createdOrUpdated, $warningDays, $requiredDocumentSchemes) {
             $expiresAt = $certification->expires_at?->startOfDay();
             $affectedLotsQuery = Lot::query()->where('status', 'active')->where(function ($query) use ($certification) {
-                if ($certification->product_id) $query->where('product_id', $certification->product_id);
-                if ($certification->farm_id) $query->orWhereHas('product', fn ($product) => $product->where('farm_id', $certification->farm_id));
+                if ($certification->product_id) {
+                    $query->where('product_id', $certification->product_id);
+                }
+                if ($certification->farm_id) {
+                    $query->orWhereHas('product', fn ($product) => $product->where('farm_id', $certification->farm_id));
+                }
             });
             $affectedLotCodes = (clone $affectedLotsQuery)->pluck('code');
 
@@ -46,7 +51,7 @@ class TraceabilityAnalysisService
 
             $documentRequired = in_array('*', $requiredDocumentSchemes, true)
                 || collect($requiredDocumentSchemes)->contains(fn ($scheme) => mb_strtolower((string) $scheme) === mb_strtolower($certification->scheme) || mb_strtolower((string) $scheme) === mb_strtolower($certification->title));
-            if ($documentRequired && (! $certification->document_path || ! \Illuminate\Support\Facades\Storage::disk('local')->exists($certification->document_path))) {
+            if ($documentRequired && (! $certification->document_path || ! Storage::disk('local')->exists($certification->document_path))) {
                 $createdOrUpdated += (int) $this->openAlert($certification, 'certification_document_missing', 'warning', 'Justificatif de certification manquant', 'La configuration de conformité exige un justificatif pour ce référentiel, mais aucun fichier accessible n’est associé au dossier.', ['scheme' => $certification->scheme, 'document_path_present' => (bool) $certification->document_path]);
             }
         });
@@ -69,7 +74,12 @@ class TraceabilityAnalysisService
                 $lotIds = $product->lots->pluck('id');
                 foreach ((array) $codes as $metricCode) {
                     $exists = EnvironmentalIndicator::query()->where('metric_code', $metricCode)->when($stage !== '*', fn ($query) => $query->where('stage', $stage))
-                        ->where(function ($query) use ($product, $lotIds) { $query->where('product_id', $product->id); if ($lotIds->isNotEmpty()) $query->orWhereIn('lot_id', $lotIds); })->exists();
+                        ->where(function ($query) use ($product, $lotIds) {
+                            $query->where('product_id', $product->id);
+                            if ($lotIds->isNotEmpty()) {
+                                $query->orWhereIn('lot_id', $lotIds);
+                            }
+                        })->exists();
                     if (! $exists) {
                         $createdOrUpdated += (int) $this->openAlert($product, 'required_indicator_missing', 'info', 'Indicateur environnemental requis absent', 'Le code d’indicateur configuré pour cette étape n’est pas enregistré pour ce produit ni ses lots liés. Le dossier est incomplet au regard de cette règle configurée.', ['required_metric_code' => (string) $metricCode, 'required_stage' => (string) $stage, 'product_reference' => $product->reference]);
                     }

@@ -64,10 +64,15 @@ class ComplianceController extends Controller
             $query->where(fn (Builder $where) => $where->where('title', 'like', $like)->orWhere('scheme', 'like', $like)->orWhere('certificate_number', 'like', $like)->orWhere('issuer', 'like', $like)->orWhereHas('creator', fn ($owner) => $owner->where('name', 'like', $like))->orWhereHas('product', fn ($product) => $product->where('name', 'like', $like))->orWhereHas('farm', fn ($farm) => $farm->where('name', 'like', $like)));
         });
         $status = $filters['status'] ?? null;
-        if ($status === 'expired') $query->where(fn ($q) => $q->where('status', 'expired')->orWhereDate('expires_at', '<', today()));
-        elseif ($status === 'expiring') $query->where('status', 'valid')->whereNotNull('expires_at')->whereDate('expires_at', '>=', today())->whereDate('expires_at', '<=', today()->addDays(max(1, (int) config('compliance.renewal_warning_days', 30))));
-        elseif ($status === 'incomplete') $query->whereIn('id', $this->requiredDocumentCertifications()->select('certifications.id'));
-        elseif ($status) $query->where('status', $status);
+        if ($status === 'expired') {
+            $query->where(fn ($q) => $q->where('status', 'expired')->orWhereDate('expires_at', '<', today()));
+        } elseif ($status === 'expiring') {
+            $query->where('status', 'valid')->whereNotNull('expires_at')->whereDate('expires_at', '>=', today())->whereDate('expires_at', '<=', today()->addDays(max(1, (int) config('compliance.renewal_warning_days', 30))));
+        } elseif ($status === 'incomplete') {
+            $query->whereIn('id', $this->requiredDocumentCertifications()->select('certifications.id'));
+        } elseif ($status) {
+            $query->where('status', $status);
+        }
         $query->when($filters['expires_from'] ?? null, fn ($q, $date) => $q->whereDate('expires_at', '>=', $date))
             ->when($filters['expires_to'] ?? null, fn ($q, $date) => $q->whereDate('expires_at', '<=', $date));
 
@@ -99,7 +104,9 @@ class ComplianceController extends Controller
                         Distribution::class => ['reference'],
                         default => [],
                     };
-                    foreach ($columns as $index => $column) $index === 0 ? $subject->where($column, 'like', $like) : $subject->orWhere($column, 'like', $like);
+                    foreach ($columns as $index => $column) {
+                        $index === 0 ? $subject->where($column, 'like', $like) : $subject->orWhere($column, 'like', $like);
+                    }
                     $ownerRelations = match ($type) {
                         Certification::class => ['creator', 'product.owner', 'farm.owner'],
                         Product::class => ['owner', 'farm.owner'],
@@ -108,7 +115,9 @@ class ComplianceController extends Controller
                         Transformation::class, Distribution::class => ['owner'],
                         default => [],
                     };
-                    foreach ($ownerRelations as $relation) $subject->orWhereHas($relation, fn (Builder $owner) => $owner->where('name', 'like', $like));
+                    foreach ($ownerRelations as $relation) {
+                        $subject->orWhereHas($relation, fn (Builder $owner) => $owner->where('name', 'like', $like));
+                    }
                 }));
             })
             ->orderByRaw("CASE severity WHEN 'critical' THEN 0 WHEN 'warning' THEN 1 ELSE 2 END")
@@ -121,13 +130,21 @@ class ComplianceController extends Controller
     {
         $alert->load(['assignee', 'closer', 'creator', 'correctiveActions.responsible', 'correctiveActions.creator', 'events.actor']);
         $subject = $alert->subject;
-        if ($subject instanceof Certification) $subject->load(['creator', 'complianceEvents', 'product.owner', 'product.farm.owner', 'product.lots.transformations.owner', 'product.lots.distributions.owner', 'product.lots.distributions.store', 'product.lots.indicators.recorder', 'farm.owner', 'farm.certifications.creator', 'farm.products.owner', 'farm.products.lots.transformations.owner', 'farm.products.lots.distributions.owner', 'farm.products.lots.distributions.store', 'farm.products.lots.indicators.recorder']);
-        elseif ($subject instanceof Product) $subject->load(['owner', 'farm.owner', 'certifications.creator', 'indicators.recorder', 'lots.transformations.owner', 'lots.distributions.owner', 'lots.distributions.store', 'lots.indicators.recorder']);
-        elseif ($subject instanceof Farm) $subject->load(['owner', 'certifications.creator', 'products.owner', 'products.certifications.creator', 'products.lots.transformations.owner', 'products.lots.distributions.owner', 'products.lots.distributions.store', 'products.indicators.recorder']);
-        elseif ($subject instanceof Lot) $subject->load(['product.owner', 'product.farm.owner', 'product.certifications.creator', 'transformations.owner', 'distributions.owner', 'distributions.store', 'indicators.recorder']);
-        elseif ($subject instanceof Transformation) $subject->load(['owner', 'lots.product.owner', 'lots.product.farm.owner', 'lots.product.certifications.creator', 'lots.distributions.owner', 'lots.distributions.store', 'lots.indicators.recorder']);
-        elseif ($subject instanceof Distribution) $subject->load(['owner', 'store', 'lot.product.owner', 'lot.product.farm.owner', 'lot.product.certifications.creator', 'lot.transformations.owner', 'lot.indicators.recorder']);
-        elseif ($subject instanceof EnvironmentalIndicator) $subject->load(['recorder', 'product.owner', 'product.farm.owner', 'product.certifications.creator', 'lot.product.owner', 'lot.product.farm.owner', 'lot.transformations.owner', 'lot.distributions.owner', 'lot.distributions.store']);
+        if ($subject instanceof Certification) {
+            $subject->load(['creator', 'complianceEvents', 'product.owner', 'product.farm.owner', 'product.lots.transformations.owner', 'product.lots.distributions.owner', 'product.lots.distributions.store', 'product.lots.indicators.recorder', 'farm.owner', 'farm.certifications.creator', 'farm.products.owner', 'farm.products.lots.transformations.owner', 'farm.products.lots.distributions.owner', 'farm.products.lots.distributions.store', 'farm.products.lots.indicators.recorder']);
+        } elseif ($subject instanceof Product) {
+            $subject->load(['owner', 'farm.owner', 'certifications.creator', 'indicators.recorder', 'lots.transformations.owner', 'lots.distributions.owner', 'lots.distributions.store', 'lots.indicators.recorder']);
+        } elseif ($subject instanceof Farm) {
+            $subject->load(['owner', 'certifications.creator', 'products.owner', 'products.certifications.creator', 'products.lots.transformations.owner', 'products.lots.distributions.owner', 'products.lots.distributions.store', 'products.indicators.recorder']);
+        } elseif ($subject instanceof Lot) {
+            $subject->load(['product.owner', 'product.farm.owner', 'product.certifications.creator', 'transformations.owner', 'distributions.owner', 'distributions.store', 'indicators.recorder']);
+        } elseif ($subject instanceof Transformation) {
+            $subject->load(['owner', 'lots.product.owner', 'lots.product.farm.owner', 'lots.product.certifications.creator', 'lots.distributions.owner', 'lots.distributions.store', 'lots.indicators.recorder']);
+        } elseif ($subject instanceof Distribution) {
+            $subject->load(['owner', 'store', 'lot.product.owner', 'lot.product.farm.owner', 'lot.product.certifications.creator', 'lot.transformations.owner', 'lot.indicators.recorder']);
+        } elseif ($subject instanceof EnvironmentalIndicator) {
+            $subject->load(['recorder', 'product.owner', 'product.farm.owner', 'product.certifications.creator', 'lot.product.owner', 'lot.product.farm.owner', 'lot.transformations.owner', 'lot.distributions.owner', 'lot.distributions.store']);
+        }
 
         $chain = $this->traceabilityChain($subject);
         $relatedIds = [
@@ -141,7 +158,11 @@ class ComplianceController extends Controller
         ];
         $hasRelatedSubjects = collect($relatedIds)->contains(fn ($ids) => $ids->isNotEmpty());
         $relatedAlerts = $hasRelatedSubjects ? TraceabilityAlert::query()->where('id', '!=', $alert->id)->where(function (Builder $query) use ($relatedIds) {
-            foreach ($relatedIds as $type => $ids) if ($ids->isNotEmpty()) $query->orWhere(fn (Builder $related) => $related->where('subject_type', $type)->whereIn('subject_id', $ids));
+            foreach ($relatedIds as $type => $ids) {
+                if ($ids->isNotEmpty()) {
+                    $query->orWhere(fn (Builder $related) => $related->where('subject_type', $type)->whereIn('subject_id', $ids));
+                }
+            }
         })->with('assignee')->orderByRaw("CASE severity WHEN 'critical' THEN 0 WHEN 'warning' THEN 1 ELSE 2 END")->latest()->limit(12)->get() : collect();
         $assignees = User::query()->where('status', 'approved')->whereIn('role', ['admin', 'producteur', 'transformateur', 'distributeur'])->orderBy('name')->get(['id', 'name', 'role']);
 
@@ -235,7 +256,9 @@ class ComplianceController extends Controller
             $action->forceFill(['status' => $data['status'], 'evidence_path' => $path, 'completed_at' => $data['status'] === 'completed' ? now() : null])->save();
             $this->event($request, $action->alert, $action, 'action.updated', $previous, $data['status'], $data['comment'], ['evidence_added' => $request->hasFile('evidence')]);
         });
-        if ($request->hasFile('evidence') && $oldPath) Storage::disk('local')->delete($oldPath);
+        if ($request->hasFile('evidence') && $oldPath) {
+            Storage::disk('local')->delete($oldPath);
+        }
 
         return back()->with('status', 'Action corrective mise à jour.');
     }
@@ -250,7 +273,9 @@ class ComplianceController extends Controller
     private function requiredDocumentCertifications(): Builder
     {
         $schemes = (array) config('compliance.required_certification_schemes', []);
-        if ($schemes === []) return Certification::query()->whereRaw('1 = 0');
+        if ($schemes === []) {
+            return Certification::query()->whereRaw('1 = 0');
+        }
         $certifications = Certification::query()->when(! in_array('*', $schemes, true), fn ($query) => $query->where(fn ($q) => $q->whereIn('scheme', $schemes)->orWhereIn('title', $schemes)))->get(['id', 'document_path']);
         $missingIds = $certifications->filter(fn (Certification $certification) => ! $certification->document_path || ! Storage::disk('local')->exists($certification->document_path))->pluck('id');
 
@@ -263,19 +288,44 @@ class ComplianceController extends Controller
         $farm = null;
         $directProducts = collect();
         $lots = collect();
-        if ($subject instanceof Certification) { $product = $subject->product; $farm = $subject->farm ?? $product?->farm; $directProducts = $farm?->products ?? collect(); $lots = $product?->lots ?? $directProducts->flatMap->lots; }
-        elseif ($subject instanceof Product) { $product = $subject; $farm = $product->farm; $lots = $product->lots; }
-        elseif ($subject instanceof Farm) { $farm = $subject; $directProducts = $farm->products; $lots = $directProducts->flatMap->lots; }
-        elseif ($subject instanceof Lot) { $lots = collect([$subject]); $product = $subject->product; $farm = $product?->farm; }
-        elseif ($subject instanceof Transformation) { $lots = $subject->lots; $product = $lots->first()?->product; $farm = $product?->farm; }
-        elseif ($subject instanceof Distribution) { $lots = collect([$subject->lot])->filter(); $product = $subject->lot?->product; $farm = $product?->farm; }
-        elseif ($subject instanceof EnvironmentalIndicator) { $product = $subject->product ?? $subject->lot?->product; $farm = $product?->farm; $lots = $subject->lot ? collect([$subject->lot]) : ($product?->lots ?? collect()); }
+        if ($subject instanceof Certification) {
+            $product = $subject->product;
+            $farm = $subject->farm ?? $product?->farm;
+            $directProducts = $farm?->products ?? collect();
+            $lots = $product?->lots ?? $directProducts->flatMap->lots;
+        } elseif ($subject instanceof Product) {
+            $product = $subject;
+            $farm = $product->farm;
+            $lots = $product->lots;
+        } elseif ($subject instanceof Farm) {
+            $farm = $subject;
+            $directProducts = $farm->products;
+            $lots = $directProducts->flatMap->lots;
+        } elseif ($subject instanceof Lot) {
+            $lots = collect([$subject]);
+            $product = $subject->product;
+            $farm = $product?->farm;
+        } elseif ($subject instanceof Transformation) {
+            $lots = $subject->lots;
+            $product = $lots->first()?->product;
+            $farm = $product?->farm;
+        } elseif ($subject instanceof Distribution) {
+            $lots = collect([$subject->lot])->filter();
+            $product = $subject->lot?->product;
+            $farm = $product?->farm;
+        } elseif ($subject instanceof EnvironmentalIndicator) {
+            $product = $subject->product ?? $subject->lot?->product;
+            $farm = $product?->farm;
+            $lots = $subject->lot ? collect([$subject->lot]) : ($product?->lots ?? collect());
+        }
 
         $lots = Lot::query()->whereIn('id', $lots->filter()->pluck('id')->unique())
             ->with(['product.owner', 'product.farm.owner', 'product.certifications.creator', 'transformations.owner', 'distributions.owner', 'distributions.store', 'indicators.recorder'])
             ->get();
         $products = $lots->pluck('product')->filter()->concat($directProducts)->push($product)->filter()->unique('id')->values();
-        if (! $farm) $farm = $products->first()?->farm;
+        if (! $farm) {
+            $farm = $products->first()?->farm;
+        }
         $certifications = $products->flatMap(fn (Product $item) => $item->certifications)->concat($farm?->certifications ?? collect())->filter()->unique('id')->values();
         $indicators = $products->flatMap(fn (Product $item) => $item->indicators)->concat($lots->flatMap(fn (Lot $lot) => $lot->indicators))->filter()->unique('id')->values();
         $transformations = $lots->flatMap(fn (Lot $lot) => $lot->transformations)->filter()->unique('id')->values();

@@ -1,10 +1,13 @@
 <?php
 
+use App\Http\Controllers\DistributorHistoryController;
+use App\Http\Controllers\HarvestPlanController;
 use App\Http\Controllers\MapDistancesController;
 use App\Http\Controllers\OpenFoodFactsController;
 use App\Http\Controllers\ProducerQrCodeController;
-use App\Http\Controllers\PublicCatalogController;
+use App\Http\Controllers\ProducerWeatherController;
 use App\Http\Controllers\ProductRatingController;
+use App\Http\Controllers\PublicCatalogController;
 use App\Http\Controllers\TraceabilityController;
 use Illuminate\Support\Facades\Route;
 
@@ -25,16 +28,16 @@ Route::get('/workspace/catalogue/products/{product}', fn (int $product) => redir
 
 Route::middleware(['auth', 'approved'])->prefix('workspace')->name('workspace.')->group(function () {
     Route::middleware('role:transformateur')->prefix('open-food-facts')->name('open-food-facts.')->group(function () {
-        Route::get('/', [App\Http\Controllers\OpenFoodFactsController::class, 'index'])->name('index');
-        Route::get('/search', [App\Http\Controllers\OpenFoodFactsController::class, 'search'])->middleware('throttle:20,1')->name('search');
-        Route::post('/import', [App\Http\Controllers\OpenFoodFactsController::class, 'import'])->name('import');
-        Route::delete('/items/{item}', [App\Http\Controllers\OpenFoodFactsController::class, 'destroyData'])->whereNumber('item')->name('items.destroy');
+        Route::get('/', [OpenFoodFactsController::class, 'index'])->name('index');
+        Route::get('/search', [OpenFoodFactsController::class, 'search'])->middleware('throttle:20,1')->name('search');
+        Route::post('/import', [OpenFoodFactsController::class, 'import'])->name('import');
+        Route::delete('/items/{item}', [OpenFoodFactsController::class, 'destroyData'])->whereNumber('item')->name('items.destroy');
     });
-    Route::get('/qr-codes', [App\Http\Controllers\ProducerQrCodeController::class, 'index'])->middleware('role:producteur')->name('qr-codes.index');
-    Route::get('/map-distances', [App\Http\Controllers\MapDistancesController::class, 'index'])->middleware('role:distributeur')->name('map-distances');
+    Route::get('/qr-codes', [ProducerQrCodeController::class, 'index'])->middleware('role:producteur')->name('qr-codes.index');
+    Route::get('/map-distances', [MapDistancesController::class, 'index'])->middleware('role:distributeur')->name('map-distances');
     Route::middleware('role:distributeur')->prefix('history')->name('history.')->group(function () {
-        Route::get('/', [App\Http\Controllers\DistributorHistoryController::class, 'index'])->name('index');
-        Route::get('/{distribution}', [App\Http\Controllers\DistributorHistoryController::class, 'show'])->whereNumber('distribution')->name('show');
+        Route::get('/', [DistributorHistoryController::class, 'index'])->name('index');
+        Route::get('/{distribution}', [DistributorHistoryController::class, 'show'])->whereNumber('distribution')->name('show');
     });
     Route::get('/{resource}', [TraceabilityController::class, 'index'])->whereIn('resource', ['farms', 'products', 'lots', 'transformations', 'stores', 'distributions', 'certifications', 'indicators'])->name('resources.index');
     Route::get('/{resource}/create', [TraceabilityController::class, 'create'])->whereIn('resource', ['farms', 'products', 'lots', 'transformations', 'stores', 'distributions', 'certifications', 'indicators'])->name('resources.create');
@@ -54,18 +57,18 @@ Route::middleware(['auth', 'approved'])->prefix('workspace')->name('workspace.')
 });
 
 Route::middleware(['auth', 'approved', 'role:producteur'])->prefix('producer/harvest-plans')->name('producer.harvest-plans.')->group(function () {
-    Route::get('/', [App\Http\Controllers\HarvestPlanController::class, 'index'])->name('index');
-    Route::get('/events', [App\Http\Controllers\HarvestPlanController::class, 'events'])->name('events');
-    Route::get('/create', [App\Http\Controllers\HarvestPlanController::class, 'create'])->name('create');
-    Route::post('/', [App\Http\Controllers\HarvestPlanController::class, 'store'])->name('store');
-    Route::get('/{harvestPlan}/edit', [App\Http\Controllers\HarvestPlanController::class, 'edit'])->whereNumber('harvestPlan')->name('edit');
-    Route::put('/{harvestPlan}', [App\Http\Controllers\HarvestPlanController::class, 'update'])->whereNumber('harvestPlan')->name('update');
-    Route::patch('/{harvestPlan}/status', [App\Http\Controllers\HarvestPlanController::class, 'status'])->whereNumber('harvestPlan')->name('status');
-    Route::delete('/{harvestPlan}', [App\Http\Controllers\HarvestPlanController::class, 'destroy'])->whereNumber('harvestPlan')->name('destroy');
-    Route::get('/{harvestPlan}', [App\Http\Controllers\HarvestPlanController::class, 'show'])->whereNumber('harvestPlan')->name('show');
+    Route::get('/', [HarvestPlanController::class, 'index'])->name('index');
+    Route::get('/events', [HarvestPlanController::class, 'events'])->name('events');
+    Route::get('/create', [HarvestPlanController::class, 'create'])->name('create');
+    Route::post('/', [HarvestPlanController::class, 'store'])->name('store');
+    Route::get('/{harvestPlan}/edit', [HarvestPlanController::class, 'edit'])->whereNumber('harvestPlan')->name('edit');
+    Route::put('/{harvestPlan}', [HarvestPlanController::class, 'update'])->whereNumber('harvestPlan')->name('update');
+    Route::patch('/{harvestPlan}/status', [HarvestPlanController::class, 'status'])->whereNumber('harvestPlan')->name('status');
+    Route::delete('/{harvestPlan}', [HarvestPlanController::class, 'destroy'])->whereNumber('harvestPlan')->name('destroy');
+    Route::get('/{harvestPlan}', [HarvestPlanController::class, 'show'])->whereNumber('harvestPlan')->name('show');
 });
 
 Route::middleware(['auth', 'approved', 'role:producteur'])->prefix('producer/weather')->name('producer.weather.')->group(function () {
-    Route::get('/', [App\Http\Controllers\ProducerWeatherController::class, 'index'])->name('index');
-    Route::get('/forecast', [App\Http\Controllers\ProducerWeatherController::class, 'forecast'])->middleware('throttle:30,1')->name('forecast');
+    Route::get('/', [ProducerWeatherController::class, 'index'])->name('index');
+    Route::get('/forecast', [ProducerWeatherController::class, 'forecast'])->middleware('throttle:30,1')->name('forecast');
 });

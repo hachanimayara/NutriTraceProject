@@ -12,9 +12,7 @@ class HarvestPlanReminderMail extends Mailable
 {
     use Queueable;
 
-    public function __construct(public HarvestPlan $plan)
-    {
-    }
+    public function __construct(public HarvestPlan $plan) {}
 
     public function envelope(): Envelope
     {

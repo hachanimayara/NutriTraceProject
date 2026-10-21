@@ -60,7 +60,7 @@ class TraceabilityCsvImportTest extends TestCase
         ])->assertSessionHasErrors('file');
 
         $this->post(route('workspace.resources.import.analyze', 'farms'), [
-            'file' => UploadedFile::fake()->createWithContent('empty.csv', ""),
+            'file' => UploadedFile::fake()->createWithContent('empty.csv', ''),
         ])->assertSessionHasErrors('file');
 
         $distributor = User::factory()->create(['role' => 'distributeur', 'status' => 'approved']);

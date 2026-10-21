@@ -39,9 +39,13 @@ class ProducerWeatherTest extends TestCase
     private function payload(): array
     {
         $times = [];
-        for ($hour = 0; $hour < 48; $hour++) $times[] = Carbon::now('Africa/Tunis')->startOfHour()->addHours($hour)->format('Y-m-d\\TH:i');
+        for ($hour = 0; $hour < 48; $hour++) {
+            $times[] = Carbon::now('Africa/Tunis')->startOfHour()->addHours($hour)->format('Y-m-d\\TH:i');
+        }
         $days = [];
-        for ($day = 0; $day < 7; $day++) $days[] = Carbon::now('Africa/Tunis')->addDays($day)->toDateString();
+        for ($day = 0; $day < 7; $day++) {
+            $days[] = Carbon::now('Africa/Tunis')->addDays($day)->toDateString();
+        }
 
         return [
             'latitude' => 36.8, 'longitude' => 10.18, 'timezone' => 'Africa/Tunis', 'timezone_abbreviation' => 'GMT+1',

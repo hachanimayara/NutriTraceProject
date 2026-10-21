@@ -134,14 +134,6 @@ class AccountManagementTest extends TestCase
         $this->actingAs($producer)->get(route('admin.dashboard'))->assertForbidden();
     }
 
-
-
-
-
-
-
-
-
     public function test_admin_can_approve_pending_user_and_protected_admin_cannot_be_deleted(): void
     {
         Notification::fake();

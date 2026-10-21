@@ -2,11 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Mail\HarvestPlanReminderMail;
 use App\Models\Farm;
-use App\Models\HarvestPlan;
 use App\Models\Product;
 use App\Models\User;
-use App\Mail\HarvestPlanReminderMail;
 use App\Notifications\HarvestPlanNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
@@ -20,6 +19,7 @@ class HarvestPlanTest extends TestCase
     {
         $farm = Farm::create(['user_id' => $owner->id, 'name' => $name, 'reference' => 'FARM-'.uniqid(), 'location' => 'Tunis', 'country' => 'Tunisie', 'status' => 'active']);
         $product = Product::create(['user_id' => $owner->id, 'farm_id' => $farm->id, 'name' => 'Tomates', 'reference' => 'PROD-'.uniqid(), 'category' => 'Légumes', 'unit' => 'kg', 'status' => 'published']);
+
         return [$farm, $product];
     }
 

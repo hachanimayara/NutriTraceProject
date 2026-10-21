@@ -50,8 +50,23 @@ class Distribution extends Model
         });
     }
 
-    public function owner(): BelongsTo { return $this->belongsTo(User::class, 'user_id'); }
-    public function lot(): BelongsTo { return $this->belongsTo(Lot::class); }
-    public function store(): BelongsTo { return $this->belongsTo(Store::class); }
-    public function statusHistory(): HasMany { return $this->hasMany(DistributionStatusHistory::class)->orderBy('changed_at')->orderBy('id'); }
+    public function owner(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function lot(): BelongsTo
+    {
+        return $this->belongsTo(Lot::class);
+    }
+
+    public function store(): BelongsTo
+    {
+        return $this->belongsTo(Store::class);
+    }
+
+    public function statusHistory(): HasMany
+    {
+        return $this->hasMany(DistributionStatusHistory::class)->orderBy('changed_at')->orderBy('id');
+    }
 }

@@ -1,11 +1,11 @@
 <?php
 
-use App\Http\Controllers\Admin\DocumentAnalysisController;
 use App\Http\Controllers\Admin\ComplianceController;
+use App\Http\Controllers\Admin\DocumentAnalysisController;
+use App\Http\Controllers\Admin\ProductRatingController as AdminProductRatingController;
 use App\Http\Controllers\Admin\TraceabilityAlertController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\Admin\ProductRatingController as AdminProductRatingController;
 use App\Http\Controllers\LocalRecaptchaDiagnosticController;
 use App\Http\Controllers\MessagingController;
 use App\Http\Controllers\ProfileController;

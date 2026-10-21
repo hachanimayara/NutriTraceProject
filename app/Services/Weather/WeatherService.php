@@ -33,7 +33,9 @@ class WeatherService
 
         $timezone = $this->timezoneFor($farm);
         $cacheKey = 'weather.forecast.'.sha1(implode('|', [round((float) $farm->latitude, 5), round((float) $farm->longitude, 5), $timezone]));
-        if ($refresh) Cache::forget($cacheKey);
+        if ($refresh) {
+            Cache::forget($cacheKey);
+        }
 
         return Cache::remember($cacheKey, now()->addSeconds(max(1, config('weather.cache_ttl', 1800))), function () use ($farm, $timezone) {
             try {
@@ -89,18 +91,28 @@ class WeatherService
 
     private function hasUsableForecast(array $data): bool
     {
-        if (! is_array($data['current'] ?? null) || ! is_array($data['hourly'] ?? null) || ! is_array($data['daily'] ?? null)) return false;
+        if (! is_array($data['current'] ?? null) || ! is_array($data['hourly'] ?? null) || ! is_array($data['daily'] ?? null)) {
+            return false;
+        }
 
         foreach (['temperature_2m', 'apparent_temperature', 'relative_humidity_2m', 'precipitation', 'weather_code', 'wind_speed_10m', 'wind_direction_10m', 'wind_gusts_10m'] as $key) {
-            if (! array_key_exists($key, $data['current']) || ! is_numeric($data['current'][$key])) return false;
+            if (! array_key_exists($key, $data['current']) || ! is_numeric($data['current'][$key])) {
+                return false;
+            }
         }
-        if (! isset($data['current']['time']) || ! is_string($data['current']['time'])) return false;
+        if (! isset($data['current']['time']) || ! is_string($data['current']['time'])) {
+            return false;
+        }
 
         foreach ([['hourly', self::HOURLY], ['daily', self::DAILY]] as [$group, $variables]) {
             $times = $data[$group]['time'] ?? null;
-            if (! is_array($times) || $times === []) return false;
+            if (! is_array($times) || $times === []) {
+                return false;
+            }
             foreach ($variables as $variable) {
-                if (! is_array($data[$group][$variable] ?? null) || count($data[$group][$variable]) !== count($times)) return false;
+                if (! is_array($data[$group][$variable] ?? null) || count($data[$group][$variable]) !== count($times)) {
+                    return false;
+                }
             }
         }
 

@@ -28,12 +28,24 @@ class DistributorHistoryController extends Controller
                 ->orWhereHas('lot', fn ($lot) => $lot->where('code', 'like', "%{$term}%"))
                 ->orWhereHas('lot.product', fn ($product) => $product->where('name', 'like', "%{$term}%")));
         }
-        if (($filters['type'] ?? null) === 'livraison') $query->where('status', 'delivered');
-        if (($filters['type'] ?? null) === 'expedition') $query->whereNotNull('shipped_at')->where('status', '!=', 'delivered');
-        if (($filters['type'] ?? null) === 'preparation') $query->where('status', 'planned');
-        if (! empty($filters['status'])) $query->where('status', $filters['status']);
-        if (! empty($filters['from'])) $query->whereRaw('DATE(COALESCE(delivered_at, shipped_at, created_at)) >= ?', [$filters['from']]);
-        if (! empty($filters['to'])) $query->whereRaw('DATE(COALESCE(delivered_at, shipped_at, created_at)) <= ?', [$filters['to']]);
+        if (($filters['type'] ?? null) === 'livraison') {
+            $query->where('status', 'delivered');
+        }
+        if (($filters['type'] ?? null) === 'expedition') {
+            $query->whereNotNull('shipped_at')->where('status', '!=', 'delivered');
+        }
+        if (($filters['type'] ?? null) === 'preparation') {
+            $query->where('status', 'planned');
+        }
+        if (! empty($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+        if (! empty($filters['from'])) {
+            $query->whereRaw('DATE(COALESCE(delivered_at, shipped_at, created_at)) >= ?', [$filters['from']]);
+        }
+        if (! empty($filters['to'])) {
+            $query->whereRaw('DATE(COALESCE(delivered_at, shipped_at, created_at)) <= ?', [$filters['to']]);
+        }
 
         return view('traceability.distributor-history', [
             'records' => $query->orderByRaw('COALESCE(delivered_at, shipped_at, created_at) DESC')->orderByDesc('id')->paginate(5)->withQueryString(),
