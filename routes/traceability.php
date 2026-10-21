@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\MapDistancesController;
+use App\Http\Controllers\OpenFoodFactsController;
+use App\Http\Controllers\ProducerQrCodeController;
 use App\Http\Controllers\PublicCatalogController;
 use App\Http\Controllers\ProductRatingController;
 use App\Http\Controllers\TraceabilityController;

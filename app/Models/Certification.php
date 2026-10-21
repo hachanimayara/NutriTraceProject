@@ -3,10 +3,10 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Certification extends Model
 {
@@ -14,7 +14,10 @@ class Certification extends Model
 
     protected $fillable = ['created_by', 'farm_id', 'product_id', 'title', 'scheme', 'certificate_number', 'issuer', 'issued_at', 'expires_at', 'document_path', 'status', 'notes'];
 
-    protected function casts(): array { return ['issued_at' => 'date', 'expires_at' => 'date']; }
+    protected function casts(): array
+    {
+        return ['issued_at' => 'date', 'expires_at' => 'date'];
+    }
 
     public function creator(): BelongsTo { return $this->belongsTo(User::class, 'created_by'); }
     public function farm(): BelongsTo { return $this->belongsTo(Farm::class); }

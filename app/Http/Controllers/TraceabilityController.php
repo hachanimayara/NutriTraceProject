@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class TraceabilityController extends Controller
 {
@@ -44,7 +45,9 @@ class TraceabilityController extends Controller
         $stages = $resource === 'indicators'
             ? (clone $query)->whereNotNull('stage')->where('stage', '!=', '')->distinct()->orderBy('stage')->pluck('stage')
             : collect();
-        if ($resource === 'products') $query->select(['products.id', 'products.user_id', 'products.farm_id', 'products.name', 'products.reference', 'products.category', 'products.origin', 'products.description', 'products.quantity', 'products.unit', 'products.status', 'products.image_name', 'products.image_mime', 'products.created_at', 'products.updated_at', 'products.deleted_at']);
+        if ($resource === 'products') {
+            $query->select(['products.id', 'products.user_id', 'products.farm_id', 'products.name', 'products.reference', 'products.category', 'products.origin', 'products.description', 'products.quantity', 'products.unit', 'products.status', 'products.image_name', 'products.image_mime', 'products.created_at', 'products.updated_at', 'products.deleted_at']);
+        }
         if ($request->filled('q')) {
             $this->applyResourceSearch($query, $resource, trim($request->string('q')->toString()));
         }
@@ -64,7 +67,9 @@ class TraceabilityController extends Controller
             $modalRecord = null;
             if ($request->query('modal') === 'edit' && $request->filled('record')) {
                 $modalQuery = clone $this->scopedQuery($resource, $config);
-                if ($resource === 'products') $modalQuery->select(['products.id', 'products.user_id', 'products.farm_id', 'products.name', 'products.reference', 'products.category', 'products.origin', 'products.description', 'products.quantity', 'products.unit', 'products.status', 'products.image_name', 'products.image_mime', 'products.created_at', 'products.updated_at', 'products.deleted_at']);
+                if ($resource === 'products') {
+                    $modalQuery->select(['products.id', 'products.user_id', 'products.farm_id', 'products.name', 'products.reference', 'products.category', 'products.origin', 'products.description', 'products.quantity', 'products.unit', 'products.status', 'products.image_name', 'products.image_mime', 'products.created_at', 'products.updated_at', 'products.deleted_at']);
+                }
                 $modalRecord = $modalQuery
                     ->with($resource === 'farms' ? ['products'] : ['farm'])
                     ->findOrFail($request->integer('record'));
@@ -160,10 +165,6 @@ class TraceabilityController extends Controller
             return redirect()->route('workspace.resources.index', ['resource' => $resource, 'modal' => 'create']);
         }
 
-        if (auth()->user()->isAdmin() && in_array($resource, ['certifications', 'indicators'], true)) {
-            return redirect()->route('workspace.resources.index', ['resource' => $resource, 'modal' => 'create']);
-        }
-
         return view('traceability.form', ['resource' => $resource, 'config' => $config, 'record' => null, 'options' => $this->options($resource)]);
     }
 
@@ -235,7 +236,9 @@ class TraceabilityController extends Controller
         $config = $this->config($resource);
         $this->assertCanWrite($config);
         $item = $this->scopedQuery($resource, $config)->findOrFail($record);
-        if ($resource === 'lots' && auth()->user()->role === 'transformateur') abort_unless($item->created_by === auth()->id(), 403);
+        if ($resource === 'lots' && auth()->user()->role === 'transformateur') {
+            abort_unless($item->created_by === auth()->id(), 403);
+        }
 
         if (auth()->user()->role === 'producteur' && in_array($resource, ['farms', 'products'], true)) {
             return redirect()->route('workspace.resources.index', ['resource' => $resource, 'modal' => 'edit', 'record' => $record]);
@@ -261,7 +264,9 @@ class TraceabilityController extends Controller
         $config = $this->config($resource);
         $this->assertCanWrite($config);
         $item = $this->scopedQuery($resource, $config)->findOrFail($record);
-        if ($resource === 'lots' && auth()->user()->role === 'transformateur') abort_unless($item->created_by === auth()->id(), 403);
+        if ($resource === 'lots' && auth()->user()->role === 'transformateur') {
+            abort_unless($item->created_by === auth()->id(), 403);
+        }
         $data = $this->validated($request, $resource, $config, $item->getKey());
         if ($resource === 'farms' && $request->hasFile('document')) {
             $file = $request->file('document');
@@ -306,7 +311,9 @@ class TraceabilityController extends Controller
                 ComplianceEvent::create(['certification_id' => $item->id, 'actor_id' => $request->user()->id, 'event' => $event, 'from_status' => $oldCertificationStatus, 'to_status' => $item->status, 'note' => $data['notes'] ?? null, 'metadata' => ['certificate_number' => $item->certificate_number, 'old_expires_at' => $oldCertificationExpiry, 'expires_at' => $item->expires_at?->toDateString(), 'document_attached' => (bool) $item->document_path]]);
             }
         });
-        if ($oldDocument && isset($data['document_path'])) Storage::disk('local')->delete($oldDocument);
+        if ($oldDocument && isset($data['document_path'])) {
+            Storage::disk('local')->delete($oldDocument);
+        }
 
         $redirect = (auth()->user()->role === 'producteur' && in_array($resource, ['farms', 'products'], true))
             || (auth()->user()->role === 'transformateur' && in_array($resource, ['farms', 'products', 'lots', 'transformations'], true))
@@ -323,8 +330,12 @@ class TraceabilityController extends Controller
         $config = $this->config($resource);
         $this->assertCanWrite($config);
         $item = $this->scopedQuery($resource, $config)->findOrFail($record);
-        if ($resource === 'lots' && auth()->user()->role === 'transformateur') abort_unless($item->created_by === auth()->id(), 403);
-        if ($resource === 'certifications' && $item->document_path) Storage::disk('local')->delete($item->document_path);
+        if ($resource === 'lots' && auth()->user()->role === 'transformateur') {
+            abort_unless($item->created_by === auth()->id(), 403);
+        }
+        if ($resource === 'certifications' && $item->document_path) {
+            Storage::disk('local')->delete($item->document_path);
+        }
         $item->delete();
 
         return redirect()->route('workspace.resources.index', $resource)->with('status', 'Enregistrement supprime.');
@@ -372,7 +383,9 @@ class TraceabilityController extends Controller
     {
         abort_unless(in_array($resource, ['lots', 'transformations'], true), 404);
         $item = $this->scopedQuery($resource, $this->config($resource))->findOrFail($record);
-        if ($resource === 'lots' && auth()->user()->role === 'transformateur') abort_unless($item->created_by === auth()->id(), 404);
+        if ($resource === 'lots' && auth()->user()->role === 'transformateur') {
+            abort_unless($item->created_by === auth()->id(), 404);
+        }
         abort_unless($item->document_contents, 404);
         $filename = preg_replace('/[^A-Za-z0-9._-]/', '_', basename($item->document_name ?: 'justificatif'));
 
@@ -531,7 +544,9 @@ class TraceabilityController extends Controller
     private function scopedQuery(string $resource, array $config): Builder
     {
         $query = $config['model']::query();
-        if ($resource === 'products') $query->select(['products.id', 'products.user_id', 'products.farm_id', 'products.name', 'products.reference', 'products.category', 'products.origin', 'products.description', 'products.quantity', 'products.unit', 'products.status', 'products.image_name', 'products.image_mime', 'products.created_at', 'products.updated_at', 'products.deleted_at']);
+        if ($resource === 'products') {
+            $query->select(['products.id', 'products.user_id', 'products.farm_id', 'products.name', 'products.reference', 'products.category', 'products.origin', 'products.description', 'products.quantity', 'products.unit', 'products.status', 'products.image_name', 'products.image_mime', 'products.created_at', 'products.updated_at', 'products.deleted_at']);
+        }
         $user = auth()->user();
         if ($user->isAdmin()) {
             return $query;
@@ -573,8 +588,11 @@ class TraceabilityController extends Controller
         $storeExists = Rule::exists('stores', 'id');
         if (! auth()->user()->isAdmin()) {
             $farmExists->where('user_id', auth()->id());
-            if (auth()->user()->role === 'transformateur') $productExists->where('status', 'published');
-            else $productExists->where('user_id', auth()->id());
+            if (auth()->user()->role === 'transformateur') {
+                $productExists->where('status', 'published');
+            } else {
+                $productExists->where('user_id', auth()->id());
+            }
             $storeExists->where('user_id', auth()->id());
         }
         $rules = match ($resource) {
@@ -599,19 +617,21 @@ class TraceabilityController extends Controller
         $data = $request->validate($rules, $messages);
         if ($resource === 'farms') $data['status'] = $data['status'] ?? 'active';
         if ($resource === 'certifications' && (bool) ($data['farm_id'] ?? null) === (bool) ($data['product_id'] ?? null)) {
-            throw \Illuminate\Validation\ValidationException::withMessages(['farm_id' => 'Associez la certification a une exploitation ou a un produit, mais pas aux deux.']);
+            throw ValidationException::withMessages(['farm_id' => 'Associez la certification a une exploitation ou a un produit, mais pas aux deux.']);
         }
         if ($resource === 'transformations' && array_intersect($data['input_lots'] ?? [], $data['output_lots'] ?? [])) {
-            throw \Illuminate\Validation\ValidationException::withMessages(['output_lots' => 'Un lot ne peut pas etre a la fois entrant et sortant pour la meme transformation.']);
+            throw ValidationException::withMessages(['output_lots' => 'Un lot ne peut pas etre a la fois entrant et sortant pour la meme transformation.']);
         }
         if ($resource === 'indicators' && empty($data['product_id']) && empty($data['lot_id'])) {
-            throw \Illuminate\Validation\ValidationException::withMessages(['product_id' => 'Associez cet indicateur a un produit ou a un lot.']);
+            throw ValidationException::withMessages(['product_id' => 'Associez cet indicateur a un produit ou a un lot.']);
         }
         if ($resource === 'certifications' && ! auth()->user()->isAdmin()) {
             $data['status'] = 'pending';
         }
         if ($resource === 'indicators') {
-            if (! auth()->user()->isAdmin()) $data['status'] = 'pending';
+            if (! auth()->user()->isAdmin()) {
+                $data['status'] = 'pending';
+            }
             $data['validated_by'] = $data['status'] === 'pending' ? null : auth()->id();
             $data['validated_at'] = $data['status'] === 'pending' ? null : now();
         }
@@ -619,41 +639,48 @@ class TraceabilityController extends Controller
             $lotIds = array_unique(array_merge($data['input_lots'] ?? [], $data['output_lots'] ?? []));
             $validCount = Lot::whereIn('id', $lotIds)->where('status', 'active')->whereHas('product', fn (Builder $q) => $q->where('status', 'published'))->count();
             if ($validCount !== count($lotIds)) {
-                throw \Illuminate\Validation\ValidationException::withMessages(['input_lots' => 'Les lots associés doivent être actifs et liés à un produit publié.']);
+                throw ValidationException::withMessages(['input_lots' => 'Les lots associés doivent être actifs et liés à un produit publié.']);
             }
         }
         if ($resource === 'distributions') {
             $lot = Lot::whereKey($data['lot_id'])->where('status', 'active')->whereHas('product', fn (Builder $q) => $q->where('status', 'published'))->first();
             if (! $lot) {
-                throw \Illuminate\Validation\ValidationException::withMessages(['lot_id' => 'Choisissez un lot actif d’un produit publié.']);
+                throw ValidationException::withMessages(['lot_id' => 'Choisissez un lot actif d’un produit publié.']);
             }
             $alreadyShippedQuery = Distribution::where('lot_id', $lot->id)->where('status', '!=', 'cancelled');
-            if ($id) $alreadyShippedQuery->where('id', '!=', $id);
+            if ($id) {
+                $alreadyShippedQuery->where('id', '!=', $id);
+            }
             $alreadyShipped = $alreadyShippedQuery->sum('quantity_shipped');
             if ((float) $alreadyShipped + (float) $data['quantity_shipped'] > (float) $lot->quantity) {
-                throw \Illuminate\Validation\ValidationException::withMessages(['quantity_shipped' => 'La quantité expédiée dépasse la quantité disponible dans ce lot.']);
+                throw ValidationException::withMessages(['quantity_shipped' => 'La quantité expédiée dépasse la quantité disponible dans ce lot.']);
             }
         }
         if ($resource === 'indicators' && ! empty($data['lot_id'])) {
             $lotQuery = Lot::whereKey($data['lot_id'])->where('status', 'active');
             if (! auth()->user()->isAdmin()) {
                 $lotQuery->whereHas('product', function (Builder $q) {
-                    if (auth()->user()->role === 'producteur') $q->where('user_id', auth()->id());
-                    else $q->where('status', 'published');
+                    if (auth()->user()->role === 'producteur') {
+                        $q->where('user_id', auth()->id());
+                    } else {
+                        $q->where('status', 'published');
+                    }
                 });
             }
             if (! $lotQuery->exists()) {
-                throw \Illuminate\Validation\ValidationException::withMessages(['lot_id' => 'Ce lot n’est pas accessible ou n’est plus actif.']);
+                throw ValidationException::withMessages(['lot_id' => 'Ce lot n’est pas accessible ou n’est plus actif.']);
             }
             if (! empty($data['product_id']) && ! Lot::whereKey($data['lot_id'])->where('product_id', $data['product_id'])->exists()) {
-                throw \Illuminate\Validation\ValidationException::withMessages(['lot_id' => 'Le produit choisi ne correspond pas au lot.']);
+                throw ValidationException::withMessages(['lot_id' => 'Le produit choisi ne correspond pas au lot.']);
             }
         }
 
         $clean = collect($data)->only($config['fields'])->all();
         if (in_array($resource, ['lots', 'transformations'], true)) {
             foreach (['document_name', 'document_mime', 'document_contents'] as $documentField) {
-                if (array_key_exists($documentField, $data)) $clean[$documentField] = $data[$documentField];
+                if (array_key_exists($documentField, $data)) {
+                    $clean[$documentField] = $data[$documentField];
+                }
             }
             if ($request->hasFile('document')) {
                 $file = $request->file('document');
@@ -662,7 +689,9 @@ class TraceabilityController extends Controller
                 $clean['document_contents'] = base64_encode($file->getContent());
             }
         }
-        if ($resource === 'farms' && auth()->user()->role === 'producteur') $clean['associated_products'] = $data['associated_products'] ?? [];
+        if ($resource === 'farms' && auth()->user()->role === 'producteur') {
+            $clean['associated_products'] = $data['associated_products'] ?? [];
+        }
 
         return $clean;
     }
@@ -686,7 +715,9 @@ class TraceabilityController extends Controller
 
     private function syncTransformationLots(Model $record, string $resource, Request $request): void
     {
-        if ($resource !== 'transformations' || ! $record instanceof Transformation) return;
+        if ($resource !== 'transformations' || ! $record instanceof Transformation) {
+            return;
+        }
 
         $rows = [];
         foreach ($request->input('input_lots', []) as $lotId) {
@@ -710,13 +741,18 @@ class TraceabilityController extends Controller
 
         if (in_array($resource, ['farms', 'products', 'certifications'], true)) {
             $farms = Farm::query();
-            if (! $user->isAdmin()) $farms->where('user_id', $user->id);
+            if (! $user->isAdmin()) {
+                $farms->where('user_id', $user->id);
+            }
             $ownedFarms = $farms->orderBy('name')->get(['id', 'name']);
         }
         if (in_array($resource, ['farms', 'lots', 'certifications', 'indicators'], true)) {
             $products = Product::query();
-            if (! $user->isAdmin() && $user->role === 'transformateur') $products->where('status', 'published');
-            elseif (! $user->isAdmin()) $products->where('user_id', $user->id);
+            if (! $user->isAdmin() && $user->role === 'transformateur') {
+                $products->where('status', 'published');
+            } elseif (! $user->isAdmin()) {
+                $products->where('user_id', $user->id);
+            }
             $ownedProducts = $products->orderBy('name')->get(['id', 'name', 'reference']);
         }
         if (in_array($resource, ['transformations', 'distributions', 'indicators'], true)) {
@@ -730,7 +766,9 @@ class TraceabilityController extends Controller
         }
         if ($resource === 'distributions') {
             $stores = Store::query();
-            if (! $user->isAdmin()) $stores->where('user_id', $user->id);
+            if (! $user->isAdmin()) {
+                $stores->where('user_id', $user->id);
+            }
             $ownedStores = $stores->orderBy('name')->get(['id', 'name', 'city']);
         }
 
@@ -910,12 +948,14 @@ class TraceabilityController extends Controller
             ->where(fn ($query) => $query->whereNull('farm_id')->orWhere('farm_id', $farm->id))
             ->whereIn('id', $productIds)->get();
         if ($products->count() !== count($productIds)) {
-            throw \Illuminate\Validation\ValidationException::withMessages(['associated_products' => 'Un ou plusieurs produits ne sont plus disponibles pour cette exploitation.']);
+            throw ValidationException::withMessages(['associated_products' => 'Un ou plusieurs produits ne sont plus disponibles pour cette exploitation.']);
         }
 
         Product::where('user_id', auth()->id())->where('farm_id', $farm->id)
             ->whereNotIn('id', $productIds ?: [0])->update(['farm_id' => null]);
-        if ($productIds) Product::whereIn('id', $productIds)->where('user_id', auth()->id())->update(['farm_id' => $farm->id]);
+        if ($productIds) {
+            Product::whereIn('id', $productIds)->where('user_id', auth()->id())->update(['farm_id' => $farm->id]);
+        }
     }
 
     private function producerStats(string $resource): array

@@ -3,9 +3,9 @@
 namespace App\Http\Controllers;
 
 use GuzzleHttp\TransferStats;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 
 class LocalRecaptchaDiagnosticController extends Controller

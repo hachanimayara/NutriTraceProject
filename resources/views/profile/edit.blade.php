@@ -13,7 +13,7 @@
 <main class="profile-page">
     <nav class="profile-crumb" aria-label="Fil d’Ariane"><a href="{{ route('dashboard') }}">Compte</a><span>›</span><span>Paramètres du profil</span></nav>
     <header class="profile-heading">
-        <div><h1>Paramètres du profil</h1><p>Gérez votre identité, vos accès biométriques et la sécurité de votre compte.</p></div>
+        <div><h1>Paramètres du profil</h1><p>Gérez votre identité, vos passkeys et la sécurité de votre compte.</p></div>
         @if($user->status === 'approved')<span class="profile-verified"><span>●</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 5 6v5c0 5 3 8 7 10 4-2 7-5 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4"/></svg>Compte vérifié</span>@endif
     </header>
 

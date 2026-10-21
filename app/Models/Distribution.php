@@ -3,9 +3,9 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
 
 class Distribution extends Model
@@ -16,7 +16,10 @@ class Distribution extends Model
 
     protected $fillable = ['user_id', 'lot_id', 'store_id', 'reference', 'quantity_shipped', 'quantity_delivered', 'unit', 'shipped_at', 'expected_at', 'delivered_at', 'status', 'notes', 'origin_name', 'origin_latitude', 'origin_longitude'];
 
-    protected function casts(): array { return ['quantity_shipped' => 'decimal:3', 'quantity_delivered' => 'decimal:3', 'shipped_at' => 'datetime', 'expected_at' => 'datetime', 'delivered_at' => 'datetime', 'origin_latitude' => 'decimal:7', 'origin_longitude' => 'decimal:7']; }
+    protected function casts(): array
+    {
+        return ['quantity_shipped' => 'decimal:3', 'quantity_delivered' => 'decimal:3', 'shipped_at' => 'datetime', 'expected_at' => 'datetime', 'delivered_at' => 'datetime', 'origin_latitude' => 'decimal:7', 'origin_longitude' => 'decimal:7'];
+    }
 
     protected static function booted(): void
     {

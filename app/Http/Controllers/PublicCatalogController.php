@@ -94,17 +94,17 @@ class PublicCatalogController extends Controller
     private function publicProductRelations(): array
     {
         return [
-                'farm:id,name,location,country',
-                'owner:id,name',
-                'farm.certifications' => fn ($query) => $query->where('status', 'valid')->where(fn ($q) => $q->whereNull('expires_at')->orWhereDate('expires_at', '>=', today()))->select(['id', 'farm_id', 'title', 'scheme', 'certificate_number', 'issuer', 'expires_at', 'status']),
-                'lots' => fn ($query) => $query->where('status', 'active')->select(['id', 'product_id', 'code', 'quantity', 'unit', 'status', 'produced_at', 'created_at'])->with([
-                    'transformations' => fn ($transformations) => $transformations->select(['transformations.id', 'transformations.name', 'transformations.reference', 'transformations.performed_at', 'transformations.facility', 'transformations.status', 'transformations.created_at']),
-                    'distributions' => fn ($distributions) => $distributions->where('status', '!=', 'cancelled')->select(['id', 'lot_id', 'store_id', 'reference', 'quantity_shipped', 'quantity_delivered', 'unit', 'shipped_at', 'expected_at', 'delivered_at', 'status', 'created_at']),
-                    'distributions.store:id,name,city',
-                    'indicators' => fn ($indicators) => $indicators->where('status', 'valid')->select(['id', 'lot_id', 'name', 'value', 'unit', 'stage', 'measured_at', 'method', 'status']),
-                ]),
-                'certifications' => fn ($query) => $query->where('status', 'valid')->where(fn ($q) => $q->whereNull('expires_at')->orWhereDate('expires_at', '>=', today()))->select(['id', 'product_id', 'title', 'scheme', 'certificate_number', 'issuer', 'expires_at', 'status']),
-                'indicators' => fn ($query) => $query->where('status', 'valid')->select(['id', 'product_id', 'name', 'value', 'unit', 'stage', 'measured_at', 'method', 'status']),
+            'farm:id,name,location,country',
+            'owner:id,name',
+            'farm.certifications' => fn ($query) => $query->where('status', 'valid')->where(fn ($q) => $q->whereNull('expires_at')->orWhereDate('expires_at', '>=', today()))->select(['id', 'farm_id', 'title', 'scheme', 'certificate_number', 'issuer', 'expires_at', 'status']),
+            'lots' => fn ($query) => $query->where('status', 'active')->select(['id', 'product_id', 'code', 'quantity', 'unit', 'status', 'produced_at', 'created_at'])->with([
+                'transformations' => fn ($transformations) => $transformations->select(['transformations.id', 'transformations.name', 'transformations.reference', 'transformations.performed_at', 'transformations.facility', 'transformations.status', 'transformations.created_at']),
+                'distributions' => fn ($distributions) => $distributions->where('status', '!=', 'cancelled')->select(['id', 'lot_id', 'store_id', 'reference', 'quantity_shipped', 'quantity_delivered', 'unit', 'shipped_at', 'expected_at', 'delivered_at', 'status', 'created_at']),
+                'distributions.store:id,name,city',
+                'indicators' => fn ($indicators) => $indicators->where('status', 'valid')->select(['id', 'lot_id', 'name', 'value', 'unit', 'stage', 'measured_at', 'method', 'status']),
+            ]),
+            'certifications' => fn ($query) => $query->where('status', 'valid')->where(fn ($q) => $q->whereNull('expires_at')->orWhereDate('expires_at', '>=', today()))->select(['id', 'product_id', 'title', 'scheme', 'certificate_number', 'issuer', 'expires_at', 'status']),
+            'indicators' => fn ($query) => $query->where('status', 'valid')->select(['id', 'product_id', 'name', 'value', 'unit', 'stage', 'measured_at', 'method', 'status']),
         ];
     }
 
@@ -137,7 +137,9 @@ class PublicCatalogController extends Controller
             ]);
 
             foreach ($lot->transformations->unique('id') as $transformation) {
-                if (isset($seenTransformations[$transformation->id])) continue;
+                if (isset($seenTransformations[$transformation->id])) {
+                    continue;
+                }
                 $seenTransformations[$transformation->id] = true;
 
                 $events->push([

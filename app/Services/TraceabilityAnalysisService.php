@@ -115,6 +115,7 @@ class TraceabilityAnalysisService
             $outputs = $transformation->lots->where('pivot.direction', 'output');
             if ($inputs->isEmpty() || $outputs->isEmpty()) {
                 $createdOrUpdated += (int) $this->openAlert($transformation, 'transformation_incomplete_links', 'warning', 'Étapes de lot incomplètes', 'La transformation doit relier au moins un lot entrant et un lot sortant pour assurer une continuité vérifiable.', ['input_lots' => $inputs->count(), 'output_lots' => $outputs->count()]);
+
                 return;
             }
 
@@ -131,7 +132,9 @@ class TraceabilityAnalysisService
     private function quantityForSameUnit(Collection $lots): ?float
     {
         $units = $lots->pluck('pivot.unit')->unique();
-        if ($units->count() !== 1) return null;
+        if ($units->count() !== 1) {
+            return null;
+        }
 
         return (float) $lots->sum(fn (Lot $lot) => (float) $lot->pivot->quantity);
     }
